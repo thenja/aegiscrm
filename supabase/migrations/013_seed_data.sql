@@ -1,0 +1,2 @@
+-- Sprint 1 seed placeholder.
+-- Intentionally left minimal. Real seed data enters in Sprint 2/admin onboarding.
