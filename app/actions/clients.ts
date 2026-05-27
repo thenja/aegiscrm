@@ -58,6 +58,7 @@ function parseClientPayload(formData: FormData) {
 
 export async function createClientAction(formData: FormData) {
   const returnTo = safeReturnTo(getString(formData, "return_to"), "/clients")
+  let redirectTarget = withFeedback(returnTo, "error", "Something went wrong. Please try again.")
 
   try {
     const auth = await requireRoleAuth(["Director", "Team Lead", "Admin"])
@@ -75,15 +76,18 @@ export async function createClientAction(formData: FormData) {
     }
 
     revalidatePath("/clients")
-    redirect(withFeedback(returnTo, "success", "Client created successfully."))
+    redirectTarget = withFeedback(returnTo, "success", "Client created successfully.")
   } catch {
-    redirect(withFeedback(returnTo, "error", "Something went wrong. Please try again."))
+    // keep generic error feedback target
   }
+
+  redirect(redirectTarget)
 }
 
 export async function updateClientAction(formData: FormData) {
   const fallback = `/clients/${getString(formData, "client_id")}?tab=details`
   const returnTo = safeReturnTo(getString(formData, "return_to"), fallback)
+  let redirectTarget = withFeedback(returnTo, "error", "Something went wrong. Please try again.")
 
   try {
     const auth = await requireRoleAuth(["Director", "Team Lead", "Admin"])
@@ -139,8 +143,10 @@ export async function updateClientAction(formData: FormData) {
 
     revalidatePath("/clients")
     revalidatePath(`/clients/${clientId}`)
-    redirect(withFeedback(returnTo, "success", "Client details updated successfully."))
+    redirectTarget = withFeedback(returnTo, "success", "Client details updated successfully.")
   } catch {
-    redirect(withFeedback(returnTo, "error", "Something went wrong. Please try again."))
+    // keep generic error feedback target
   }
+
+  redirect(redirectTarget)
 }
