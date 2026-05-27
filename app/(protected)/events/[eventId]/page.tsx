@@ -8,6 +8,7 @@ import {
 import { EventGuestsListWithDrawer } from "@/components/events/event-guests-list-with-drawer"
 import { EventGuestCreateForm } from "@/components/events/event-guest-create-form"
 import { EventImportPanel } from "@/components/events/event-import-panel"
+import { EventBackendLiveSync } from "@/components/events/event-backend-live-sync"
 import { ActionFeedback } from "@/components/ui/action-feedback"
 import { Button } from "@/components/ui/button"
 import { ModalForm } from "@/components/ui/detail-drawer"
@@ -82,6 +83,7 @@ export default async function EventDetailsPage({ params, searchParams }: Params)
 
   return (
     <div className="space-y-4">
+      <EventBackendLiveSync eventId={eventId} />
       <ActionFeedback feedback={resolvedSearchParams?.feedback} message={resolvedSearchParams?.message} />
 
       <PageHeader

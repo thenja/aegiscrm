@@ -201,6 +201,9 @@ export function EventKioskCheckin() {
       if ("ok" in payload && payload.ok) {
         setMessage("Check-in recorded successfully.")
         setMessageTone("success")
+        setSearchText("")
+        setGuests([])
+        setHasSearched(false)
       } else if ("ok" in payload && !payload.ok) {
         if (payload.checked_in_by_nickname && payload.checked_in_at) {
           const at = new Date(payload.checked_in_at).toLocaleString("en-MY")
@@ -212,7 +215,7 @@ export function EventKioskCheckin() {
       }
 
       const currentQuery = searchText.trim()
-      if (currentQuery) {
+      if (currentQuery && !("ok" in payload && payload.ok)) {
         await searchGuests(currentQuery, eventCode.trim())
       }
       await loadEvent({ preserveView: true, silent: true })
