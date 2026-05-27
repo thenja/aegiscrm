@@ -274,43 +274,43 @@ export default async function DashboardPage({
           <ClickableMetricCard
             label="Due Today"
             value={dashboard.metrics.dueToday}
-            href={buildDashboardHref(searchParams, "due_today", "focused-view")}
+            href={buildDashboardHref(resolvedSearchParams, "due_today", "focused-view")}
           />
           <ClickableMetricCard
             label="Due This Week"
             value={dashboard.metrics.dueThisWeek}
-            href={buildDashboardHref(searchParams, "due_this_week", "due-this-week-items")}
+            href={buildDashboardHref(resolvedSearchParams, "due_this_week", "due-this-week-items")}
           />
           <ClickableMetricCard
             label="Overdue"
             value={dashboard.metrics.overdue}
-            href={buildDashboardHref(searchParams, "overdue", "overdue-items")}
+            href={buildDashboardHref(resolvedSearchParams, "overdue", "overdue-items")}
             urgent
           />
           <ClickableMetricCard
             label="Pending Internal"
             value={dashboard.metrics.pendingInternal}
-            href={buildDashboardHref(searchParams, "pending_internal", "pending-items")}
+            href={buildDashboardHref(resolvedSearchParams, "pending_internal", "pending-items")}
           />
           <ClickableMetricCard
             label="Pending Client"
             value={dashboard.metrics.pendingClient}
-            href={buildDashboardHref(searchParams, "pending_client", "pending-items")}
+            href={buildDashboardHref(resolvedSearchParams, "pending_client", "pending-items")}
           />
           <ClickableMetricCard
             label="Pending External"
             value={dashboard.metrics.pendingExternal}
-            href={buildDashboardHref(searchParams, "pending_external", "pending-items")}
+            href={buildDashboardHref(resolvedSearchParams, "pending_external", "pending-items")}
           />
           <ClickableMetricCard
             label="Completed This Month"
             value={dashboard.metrics.completedThisMonth}
-            href={buildDashboardHref(searchParams, "completed_this_month", "focused-view")}
+            href={buildDashboardHref(resolvedSearchParams, "completed_this_month", "focused-view")}
           />
           <ClickableMetricCard
             label="Open Work Items"
             value={dashboard.metrics.openWorkItems}
-            href={buildDashboardHref(searchParams, "open_work_items", "focused-view")}
+            href={buildDashboardHref(resolvedSearchParams, "open_work_items", "focused-view")}
           />
         </div>
       </SectionCard>
