@@ -119,9 +119,14 @@ function ClickableMetricCard({
   )
 }
 
-export default async function DashboardPage({ searchParams }: { searchParams?: SearchParams }) {
-  const filters = toDashboardFilters(searchParams)
-  const focus = searchParams?.focus
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams?: SearchParams | Promise<SearchParams>
+}) {
+  const resolvedSearchParams = searchParams ? await searchParams : undefined
+  const filters = toDashboardFilters(resolvedSearchParams)
+  const focus = resolvedSearchParams?.focus
   const auth = await requireAuth()
   const supabase = await createClient()
 
@@ -132,12 +137,12 @@ export default async function DashboardPage({ searchParams }: { searchParams?: S
   ])
 
   const returnToParams = new URLSearchParams()
-  if (searchParams?.client_id) returnToParams.set("client_id", searchParams.client_id)
-  if (searchParams?.pic_id) returnToParams.set("pic_id", searchParams.pic_id)
-  if (searchParams?.category) returnToParams.set("category", searchParams.category)
-  if (searchParams?.status) returnToParams.set("status", searchParams.status)
-  if (searchParams?.my_items_only === "true") returnToParams.set("my_items_only", "true")
-  if (searchParams?.focus) returnToParams.set("focus", searchParams.focus)
+  if (resolvedSearchParams?.client_id) returnToParams.set("client_id", resolvedSearchParams.client_id)
+  if (resolvedSearchParams?.pic_id) returnToParams.set("pic_id", resolvedSearchParams.pic_id)
+  if (resolvedSearchParams?.category) returnToParams.set("category", resolvedSearchParams.category)
+  if (resolvedSearchParams?.status) returnToParams.set("status", resolvedSearchParams.status)
+  if (resolvedSearchParams?.my_items_only === "true") returnToParams.set("my_items_only", "true")
+  if (resolvedSearchParams?.focus) returnToParams.set("focus", resolvedSearchParams.focus)
   const returnTo = returnToParams.toString().length > 0 ? `/?${returnToParams.toString()}` : "/"
 
   const riskClientIds = Array.from(
@@ -261,7 +266,7 @@ export default async function DashboardPage({ searchParams }: { searchParams?: S
 
   return (
     <div className="space-y-6">
-      <ActionFeedback feedback={searchParams?.feedback} message={searchParams?.message} />
+      <ActionFeedback feedback={resolvedSearchParams?.feedback} message={resolvedSearchParams?.message} />
       <PageHeader title="Dashboard" description="Management visibility for due, overdue, pending, and workload across clients." />
 
       <SectionCard title="Summary Cards" description="Urgent and high-level work visibility.">
@@ -311,33 +316,33 @@ export default async function DashboardPage({ searchParams }: { searchParams?: S
       </SectionCard>
 
       <SectionCard title="Filters">
-        <details open={Boolean(searchParams?.client_id || searchParams?.pic_id || searchParams?.category || searchParams?.status || searchParams?.my_items_only === "true")}>
+        <details open={Boolean(resolvedSearchParams?.client_id || resolvedSearchParams?.pic_id || resolvedSearchParams?.category || resolvedSearchParams?.status || resolvedSearchParams?.my_items_only === "true")}>
           <summary className="cursor-pointer text-sm font-medium text-navy">Show filters</summary>
           <div className="mt-3">
             <FilterBar>
               <form method="get" className="grid grid-cols-1 gap-2 md:grid-cols-6">
-                <select name="client_id" defaultValue={searchParams?.client_id ?? ""} className="h-9 rounded-md border border-border px-3 text-sm">
+                <select name="client_id" defaultValue={resolvedSearchParams?.client_id ?? ""} className="h-9 rounded-md border border-border px-3 text-sm">
                   <option value="">All Clients</option>
                   {clients.map((client) => (
                     <option key={client.client_id} value={client.client_id}>{client.client_name}</option>
                   ))}
                 </select>
 
-                <select name="pic_id" defaultValue={searchParams?.pic_id ?? ""} className="h-9 rounded-md border border-border px-3 text-sm">
+                <select name="pic_id" defaultValue={resolvedSearchParams?.pic_id ?? ""} className="h-9 rounded-md border border-border px-3 text-sm">
                   <option value="">All PIC</option>
                   {users.map((user) => (
                     <option key={user.user_id} value={user.user_id}>{user.full_name}</option>
                   ))}
                 </select>
 
-                <select name="category" defaultValue={searchParams?.category ?? ""} className="h-9 rounded-md border border-border px-3 text-sm">
+                <select name="category" defaultValue={resolvedSearchParams?.category ?? ""} className="h-9 rounded-md border border-border px-3 text-sm">
                   <option value="">All Categories</option>
                   {CATEGORY_TYPES.map((category) => (
                     <option key={category} value={category}>{category}</option>
                   ))}
                 </select>
 
-                <select name="status" defaultValue={searchParams?.status ?? ""} className="h-9 rounded-md border border-border px-3 text-sm">
+                <select name="status" defaultValue={resolvedSearchParams?.status ?? ""} className="h-9 rounded-md border border-border px-3 text-sm">
                   <option value="">All Status</option>
                   {DASHBOARD_STATUSES.map((status) => (
                     <option key={status} value={status}>{status}</option>
@@ -349,7 +354,7 @@ export default async function DashboardPage({ searchParams }: { searchParams?: S
                     type="checkbox"
                     name="my_items_only"
                     value="true"
-                    defaultChecked={searchParams?.my_items_only === "true"}
+                    defaultChecked={resolvedSearchParams?.my_items_only === "true"}
                   />
                   My Items Only
                 </label>
