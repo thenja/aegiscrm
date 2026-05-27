@@ -1,5 +1,4 @@
 import Link from "next/link"
-import { notFound } from "next/navigation"
 
 import { createCommunicationLogAction } from "@/app/actions/communication-logs"
 import { createContactAction } from "@/app/actions/contacts"
@@ -84,7 +83,7 @@ export default async function ClientProfilePage({
   params,
   searchParams,
 }: {
-  params: { clientId: string }
+  params: { clientId: string } | Promise<{ clientId: string }>
   searchParams?: {
     tab?: string
     feedback?: string
@@ -93,24 +92,45 @@ export default async function ClientProfilePage({
     reset_create_comm_log?: string
     reset_create_deliverable?: string
     reset_create_task?: string
-  }
+  } | Promise<{
+    tab?: string
+    feedback?: string
+    message?: string
+    reset_create_contact?: string
+    reset_create_comm_log?: string
+    reset_create_deliverable?: string
+    reset_create_task?: string
+  }>
 }) {
   const auth = await requireAuth()
-  const tab = getTab(searchParams?.tab)
+  const resolvedParams = await params
+  const resolvedSearchParams = searchParams ? await searchParams : undefined
+  const clientId = resolvedParams.clientId
+  const tab = getTab(resolvedSearchParams?.tab)
 
   let client
   try {
-    client = await getClientById(params.clientId)
+    client = await getClientById(clientId)
   } catch {
-    notFound()
+    return (
+      <SectionCard className="p-4">
+        <h2 className="text-base font-semibold text-navy">Client not found or you do not have access.</h2>
+        <p className="mt-1 text-sm text-text-secondary">Please verify the client link or return to the client list.</p>
+        <div className="mt-3">
+          <Button asChild size="sm">
+            <Link href="/clients">Back to Clients</Link>
+          </Button>
+        </div>
+      </SectionCard>
+    )
   }
 
   const [contacts, users, deliverables, tasks, communicationLogs, externalContactOptions] = await Promise.all([
-    listClientContacts(params.clientId),
+    listClientContacts(clientId),
     getUsersForClientAssignments(),
-    listDeliverables({ client_id: params.clientId }),
-    listTasks({ client_id: params.clientId }),
-    listClientCommunicationLogs(params.clientId),
+    listDeliverables({ client_id: clientId }),
+    listTasks({ client_id: clientId }),
+    listClientCommunicationLogs(clientId),
     listExternalContactsForSelect(),
   ])
   const peopleInvolvedByWorkItem = await listPeopleInvolvedByWorkItems({
@@ -168,13 +188,13 @@ export default async function ClientProfilePage({
   const tabsConfig = tabs.map((tabKey) => ({
     key: tabKey,
     label: tabLabels[tabKey],
-    href: `/clients/${params.clientId}?tab=${tabKey}`,
+    href: `/clients/${clientId}?tab=${tabKey}`,
     active: tab === tabKey,
   }))
 
   return (
     <div className="space-y-6">
-      <ActionFeedback feedback={searchParams?.feedback} message={searchParams?.message} />
+      <ActionFeedback feedback={resolvedSearchParams?.feedback} message={resolvedSearchParams?.message} />
 
       <SectionCard className="p-4">
         <div className="space-y-3">
@@ -231,7 +251,7 @@ export default async function ClientProfilePage({
                     <ModalForm triggerLabel="Edit Client Details" title="Edit Client Details">
                       <FormSection title="Edit Client Details">
                         <form action={updateClientAction} className="space-y-4">
-                          <input type="hidden" name="return_to" value={`/clients/${params.clientId}?tab=details`} />
+                          <input type="hidden" name="return_to" value={`/clients/${clientId}?tab=details`} />
                           <input type="hidden" name="client_id" value={client.client_id} />
                           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                             <Input name="client_name" defaultValue={client.client_name} required />
@@ -300,11 +320,11 @@ export default async function ClientProfilePage({
                       <ModalForm triggerLabel="+ New Contact" title="Add New Contact">
                         <FormSection title="Add New Contact">
                           <form
-                            key={searchParams?.reset_create_contact ?? "create-contact-form"}
+                            key={resolvedSearchParams?.reset_create_contact ?? "create-contact-form"}
                             action={createContactAction}
                             className="grid grid-cols-1 gap-3 md:grid-cols-2"
                           >
-                            <input type="hidden" name="return_to" value={`/clients/${params.clientId}?tab=contacts`} />
+                            <input type="hidden" name="return_to" value={`/clients/${clientId}?tab=contacts`} />
                             <input type="hidden" name="client_id" value={client.client_id} />
                             <Input name="contact_name" placeholder="Contact Name" required />
                             <Input name="designation" placeholder="Designation" />
@@ -328,7 +348,7 @@ export default async function ClientProfilePage({
                   <ContactsListWithDrawer
                     contacts={contacts}
                     clientId={client.client_id}
-                    returnTo={`/clients/${params.clientId}?tab=contacts`}
+                    returnTo={`/clients/${clientId}?tab=contacts`}
                     canEdit={canEditContacts}
                   />
                 </SectionCard>
@@ -345,11 +365,11 @@ export default async function ClientProfilePage({
                       <ModalForm triggerLabel="+ New Deliverable" title="Create New Deliverable">
                         <FormSection title="Create New Deliverable" description="Add core fields first. Optional tracking fields are available in Advanced Details.">
                           <form
-                            key={searchParams?.reset_create_deliverable ?? "create-deliverable-profile-form"}
+                            key={resolvedSearchParams?.reset_create_deliverable ?? "create-deliverable-profile-form"}
                             action={createDeliverableAction}
                             className="grid grid-cols-1 gap-3 md:grid-cols-2"
                           >
-                            <input type="hidden" name="return_to" value={`/clients/${params.clientId}?tab=deliverables`} />
+                            <input type="hidden" name="return_to" value={`/clients/${clientId}?tab=deliverables`} />
                             <input type="hidden" name="sent_by_id" value={auth.profile.user_id} />
                             <DeliverableFormFields
                               users={users.map((u) => ({ user_id: u.user_id, full_name: u.full_name }))}
@@ -371,7 +391,7 @@ export default async function ClientProfilePage({
                       emptyTitle="No deliverables yet"
                       emptyDescription="Add a deliverable to start tracking client commitments."
                       canWrite={canEditWorkItems}
-                      returnTo={`/clients/${params.clientId}?tab=deliverables`}
+                      returnTo={`/clients/${clientId}?tab=deliverables`}
                       statusOptions={Array.from(DELIVERABLE_STATUSES)}
                       desktopTwoColumn
                       peopleInvolvedByWorkItem={peopleInvolvedByWorkItem}
@@ -393,11 +413,11 @@ export default async function ClientProfilePage({
                       <ModalForm triggerLabel="+ New Task" title="Create New Task">
                         <FormSection title="Create New Task" description="Add core fields first. Optional tracking fields are available in Advanced Details.">
                           <form
-                            key={searchParams?.reset_create_task ?? "create-task-profile-form"}
+                            key={resolvedSearchParams?.reset_create_task ?? "create-task-profile-form"}
                             action={createTaskAction}
                             className="grid grid-cols-1 gap-3 md:grid-cols-2"
                           >
-                            <input type="hidden" name="return_to" value={`/clients/${params.clientId}?tab=tasks`} />
+                            <input type="hidden" name="return_to" value={`/clients/${clientId}?tab=tasks`} />
                             <input type="hidden" name="client_context" value="true" />
                             <input type="hidden" name="sent_by_id" value={auth.profile.user_id} />
                             <TaskFormFields
@@ -420,7 +440,7 @@ export default async function ClientProfilePage({
                       emptyTitle="No tasks yet"
                       emptyDescription="Add a task to track daily execution items."
                       canWrite={canEditWorkItems}
-                      returnTo={`/clients/${params.clientId}?tab=tasks`}
+                      returnTo={`/clients/${clientId}?tab=tasks`}
                       statusOptions={Array.from(TASK_STATUSES)}
                       desktopTwoColumn
                       peopleInvolvedByWorkItem={peopleInvolvedByWorkItem}
@@ -454,11 +474,11 @@ export default async function ClientProfilePage({
                       <ModalForm triggerLabel="+ Log Communication" title="Log Communication">
                         <FormSection title="Log Communication">
                           <form
-                            key={searchParams?.reset_create_comm_log ?? "create-comm-log-form"}
+                            key={resolvedSearchParams?.reset_create_comm_log ?? "create-comm-log-form"}
                             action={createCommunicationLogAction}
                             className="grid grid-cols-1 gap-3 md:grid-cols-2"
                           >
-                            <input type="hidden" name="return_to" value={`/clients/${params.clientId}?tab=communication`} />
+                            <input type="hidden" name="return_to" value={`/clients/${clientId}?tab=communication`} />
                             <input type="hidden" name="client_id" value={client.client_id} />
 
                             <Input name="communication_date" type="date" required defaultValue={todayIso} />

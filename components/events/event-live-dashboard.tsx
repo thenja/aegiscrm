@@ -64,7 +64,21 @@ export function EventLiveDashboard({
       .channel(`event-guests-live-${eventId}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "event_guests", filter: `event_id=eq.${eventId}` },
+        { event: "INSERT", schema: "public", table: "event_guests", filter: `event_id=eq.${eventId}` },
+        () => {
+          void refreshLiveData(latestQueryRef.current)
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "event_guests", filter: `event_id=eq.${eventId}` },
+        () => {
+          void refreshLiveData(latestQueryRef.current)
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "event_guests", filter: `event_id=eq.${eventId}` },
         () => {
           void refreshLiveData(latestQueryRef.current)
         }
@@ -75,6 +89,24 @@ export function EventLiveDashboard({
       void supabase.removeChannel(channel)
     }
   }, [eventId, refreshLiveData])
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      void refreshLiveData(latestQueryRef.current)
+    }, 8000)
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        void refreshLiveData(latestQueryRef.current)
+      }
+    }
+    window.addEventListener("focus", onVisible)
+    document.addEventListener("visibilitychange", onVisible)
+    return () => {
+      window.clearInterval(interval)
+      window.removeEventListener("focus", onVisible)
+      document.removeEventListener("visibilitychange", onVisible)
+    }
+  }, [refreshLiveData])
 
   const summaryCards = useMemo(
     () => [

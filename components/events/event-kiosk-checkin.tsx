@@ -254,6 +254,13 @@ export function EventKioskCheckin() {
   }, [loadEvent, searchParams])
 
   const eventIdForChannel = eventInfo?.event_id
+  const refreshActiveView = useCallback(() => {
+    const currentQuery = latestSearchRef.current.trim()
+    if (currentQuery) {
+      void searchGuests(currentQuery, eventCode.trim())
+    }
+    void loadEvent({ preserveView: true, silent: true })
+  }, [eventCode, loadEvent, searchGuests])
 
   useEffect(() => {
     if (!eventIdForChannel) return
@@ -262,21 +269,44 @@ export function EventKioskCheckin() {
       .channel(`kiosk-event-${eventIdForChannel}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "event_guests", filter: `event_id=eq.${eventIdForChannel}` },
-        () => {
-          const currentQuery = latestSearchRef.current.trim()
-          if (currentQuery) {
-            void searchGuests(currentQuery, eventCode.trim())
-          }
-          void loadEvent({ preserveView: true, silent: true })
-        }
+        { event: "INSERT", schema: "public", table: "event_guests", filter: `event_id=eq.${eventIdForChannel}` },
+        refreshActiveView
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "event_guests", filter: `event_id=eq.${eventIdForChannel}` },
+        refreshActiveView
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "event_guests", filter: `event_id=eq.${eventIdForChannel}` },
+        refreshActiveView
       )
       .subscribe()
 
     return () => {
       void supabase.removeChannel(channel)
     }
-  }, [eventCode, eventIdForChannel, loadEvent, searchGuests])
+  }, [eventIdForChannel, refreshActiveView])
+
+  useEffect(() => {
+    if (!eventInfo) return
+    const interval = window.setInterval(() => {
+      refreshActiveView()
+    }, 8000)
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        refreshActiveView()
+      }
+    }
+    window.addEventListener("focus", refreshActiveView)
+    document.addEventListener("visibilitychange", onVisible)
+    return () => {
+      window.clearInterval(interval)
+      window.removeEventListener("focus", refreshActiveView)
+      document.removeEventListener("visibilitychange", onVisible)
+    }
+  }, [eventInfo, refreshActiveView])
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
