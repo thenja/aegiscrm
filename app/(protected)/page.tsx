@@ -612,7 +612,20 @@ export default async function DashboardPage({
               <summary className="cursor-pointer text-sm font-medium text-navy">
                 Show team workload ({dashboard.teamWorkload.length})
               </summary>
-              <div className="mt-3 overflow-x-auto">
+              <div className="mt-3 space-y-2 sm:hidden">
+                {dashboard.teamWorkload.slice(0, DETAIL_LIST_LIMIT).map((row) => (
+                  <article key={row.picId} className="rounded-md border border-border/90 bg-white/92 p-2.5">
+                    <p className="text-sm font-semibold text-text-primary">{row.picName}</p>
+                    <p className="mt-1 text-xs text-text-secondary">
+                      Open: <span className="font-medium text-text-primary">{row.openCount}</span>
+                      {" | "}Overdue: <span className="font-medium text-text-primary">{row.overdueCount}</span>
+                      {" | "}Due This Week: <span className="font-medium text-text-primary">{row.dueThisWeekCount}</span>
+                      {" | "}Pending: <span className="font-medium text-text-primary">{row.pendingCount}</span>
+                    </p>
+                  </article>
+                ))}
+              </div>
+              <div className="mt-3 hidden overflow-x-auto sm:block">
                 <table className="min-w-full text-sm">
                   <thead className="bg-slate-100 text-left text-xs uppercase tracking-wide text-text-secondary">
                     <tr>
@@ -635,10 +648,10 @@ export default async function DashboardPage({
                     ))}
                   </tbody>
                 </table>
-                {dashboard.teamWorkload.length > DETAIL_LIST_LIMIT ? (
-                  <p className="mt-2 text-xs text-text-secondary">Showing top {DETAIL_LIST_LIMIT} of {dashboard.teamWorkload.length} PIC rows.</p>
-                ) : null}
               </div>
+              {dashboard.teamWorkload.length > DETAIL_LIST_LIMIT ? (
+                <p className="mt-2 text-xs text-text-secondary">Showing top {DETAIL_LIST_LIMIT} of {dashboard.teamWorkload.length} PIC rows.</p>
+              ) : null}
             </details>
           )}
         </SectionCard>
@@ -652,7 +665,22 @@ export default async function DashboardPage({
             <summary className="cursor-pointer text-sm font-medium text-navy">
               Show client workload ({clientRiskRows.length})
             </summary>
-            <div className="mt-3 space-y-2 overflow-x-auto">
+            <div className="mt-3 space-y-2 sm:hidden">
+              {clientRiskRows.slice(0, RISK_CLIENT_LIMIT).map((row) => (
+                <article key={row.clientId} className="rounded-md border border-border/90 bg-white/92 p-2.5">
+                  <p className="text-sm font-semibold text-navy">
+                    <Link href={`/clients/${row.clientId}`}>{row.clientName}</Link>
+                  </p>
+                  <p className="mt-1 text-xs text-text-secondary">
+                    Open: <span className="font-medium text-text-primary">{row.openCount}</span>
+                    {" | "}Overdue: <span className="font-medium text-text-primary">{row.overdueCount}</span>
+                    {" | "}Due This Week: <span className="font-medium text-text-primary">{row.dueThisWeekCount}</span>
+                    {" | "}Pending: <span className="font-medium text-text-primary">{row.pendingCount}</span>
+                  </p>
+                </article>
+              ))}
+            </div>
+            <div className="mt-3 hidden overflow-x-auto sm:block">
               <table className="min-w-full text-sm">
                 <thead className="bg-slate-100 text-left text-xs uppercase tracking-wide text-text-secondary">
                   <tr>
@@ -677,10 +705,10 @@ export default async function DashboardPage({
                   ))}
                 </tbody>
               </table>
-              {clientRiskRows.length > RISK_CLIENT_LIMIT ? (
-                <p className="text-xs text-text-secondary">Showing top {RISK_CLIENT_LIMIT} of {clientRiskRows.length} clients.</p>
-              ) : null}
             </div>
+            {clientRiskRows.length > RISK_CLIENT_LIMIT ? (
+              <p className="text-xs text-text-secondary">Showing top {RISK_CLIENT_LIMIT} of {clientRiskRows.length} clients.</p>
+            ) : null}
           </details>
         )}
       </SectionCard>

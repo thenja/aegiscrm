@@ -198,7 +198,7 @@ export default async function WeeklyReviewPage({ searchParams }: { searchParams?
             <div className="flex gap-2">
               <Button type="submit" variant="secondary" className="h-9">Apply</Button>
               <Button type="button" variant="ghost" className="h-9" asChild>
-                <a href="/weekly-review">Reset</a>
+                <Link href="/weekly-review">Reset</Link>
               </Button>
             </div>
           </form>

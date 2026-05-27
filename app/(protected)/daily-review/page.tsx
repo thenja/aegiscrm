@@ -1,3 +1,5 @@
+import Link from "next/link"
+
 import { ActionFeedback } from "@/components/ui/action-feedback"
 import { SectionCard, PageHeader } from "@/components/ui/patterns"
 import { DashboardWorkItemsPanel } from "@/components/dashboard/dashboard-work-items-panel"
@@ -175,7 +177,7 @@ export default async function DailyReviewPage({ searchParams }: { searchParams?:
             <div className="flex gap-2">
               <Button type="submit" variant="secondary" className="h-9">Apply</Button>
               <Button type="button" variant="ghost" className="h-9" asChild>
-                <a href="/daily-review">Reset</a>
+                <Link href="/daily-review">Reset</Link>
               </Button>
             </div>
           </form>
