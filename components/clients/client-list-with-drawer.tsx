@@ -14,6 +14,7 @@ import {
   ResponsiveOverlay,
 } from "@/components/ui/detail-drawer"
 import { Input } from "@/components/ui/input"
+import { FormSubmitButton } from "@/components/ui/form-submit-button"
 import { PillBadge } from "@/components/ui/patterns"
 import { formatDisplayDate, getSingaporeTodayIsoDate } from "@/lib/date"
 import { displayClientStatus, displayFollowUpStatus } from "@/lib/ui-copy"
@@ -306,7 +307,7 @@ export function ClientListWithDrawer({
             </details>
 
             <div className="md:col-span-2">
-              <Button type="submit">Add Communication Log</Button>
+              <FormSubmitButton idleLabel="Add Communication Log" pendingLabel="Saving..." />
             </div>
           </form>
         ) : null}

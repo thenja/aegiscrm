@@ -13,8 +13,23 @@ export function TeamWorkloadCompact({
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full text-sm">
+    <>
+      <div className="space-y-2 sm:hidden">
+        {rows.slice(0, limit).map((row) => (
+          <article key={row.picId} className="rounded-md border border-border/90 bg-white/90 p-2.5">
+            <p className="text-sm font-semibold text-text-primary">{row.picName}</p>
+            <p className="mt-1 text-xs text-text-secondary">
+              Open: <span className="font-medium text-text-primary">{row.openCount}</span>
+              {" | "}Overdue: <span className="font-medium text-text-primary">{row.overdueCount}</span>
+              {" | "}Due Week: <span className="font-medium text-text-primary">{row.dueThisWeekCount}</span>
+              {" | "}Pending: <span className="font-medium text-text-primary">{row.pendingCount}</span>
+            </p>
+          </article>
+        ))}
+      </div>
+
+      <div className="hidden overflow-x-auto sm:block">
+        <table className="min-w-full text-sm">
         <thead className="bg-slate-100 text-left text-[11px] uppercase tracking-wide text-text-secondary">
           <tr>
             <th className="px-2.5 py-1.5">Owner</th>
@@ -35,10 +50,11 @@ export function TeamWorkloadCompact({
             </tr>
           ))}
         </tbody>
-      </table>
+        </table>
+      </div>
       {rows.length > limit ? (
         <p className="mt-1.5 text-xs text-text-secondary">Showing top {limit} of {rows.length} owners.</p>
       ) : null}
-    </div>
+    </>
   )
 }

@@ -15,6 +15,7 @@ import { DeliverableFormFields } from "@/components/workitems/deliverable-form-f
 import { TaskFormFields } from "@/components/workitems/task-form-fields"
 import { Button } from "@/components/ui/button"
 import { ResponsiveOverlay } from "@/components/ui/detail-drawer"
+import { FormSubmitButton } from "@/components/ui/form-submit-button"
 import { Input } from "@/components/ui/input"
 import { FormSection } from "@/components/ui/patterns"
 import {
@@ -340,7 +341,7 @@ export function QuickAddMenu({
                 </div>
               </details>
 
-              <Button type="submit">Create Client</Button>
+              <FormSubmitButton idleLabel="Create Client" pendingLabel="Creating..." />
             </form>
           </FormSection>
         ) : null}
@@ -375,7 +376,7 @@ export function QuickAddMenu({
                 </div>
               </details>
               <div className="md:col-span-2">
-                <Button type="submit">Add Contact</Button>
+                <FormSubmitButton idleLabel="Add Contact" pendingLabel="Adding..." />
               </div>
             </form>
           </FormSection>
@@ -392,7 +393,7 @@ export function QuickAddMenu({
                 includeClientSelect
               />
               <div className="md:col-span-2">
-                <Button type="submit">Create Deliverable</Button>
+                <FormSubmitButton idleLabel="Create Deliverable" pendingLabel="Creating..." />
               </div>
             </form>
           </FormSection>
@@ -428,7 +429,7 @@ export function QuickAddMenu({
               </details>
               <input type="hidden" name="is_active" value="true" />
               <div className="md:col-span-2">
-                <Button type="submit">Create External Contact</Button>
+                <FormSubmitButton idleLabel="Create External Contact" pendingLabel="Creating..." />
               </div>
             </form>
           </FormSection>
@@ -472,7 +473,7 @@ export function QuickAddMenu({
                 </div>
               </details>
               <div className="md:col-span-2">
-                <Button type="submit">Create Event</Button>
+                <FormSubmitButton idleLabel="Create Event" pendingLabel="Creating..." />
               </div>
             </form>
           </FormSection>
@@ -490,7 +491,7 @@ export function QuickAddMenu({
                 includeClientSelect
               />
               <div className="md:col-span-2">
-                <Button type="submit">Create Task</Button>
+                <FormSubmitButton idleLabel="Create Task" pendingLabel="Creating..." />
               </div>
             </form>
           </FormSection>
@@ -552,7 +553,7 @@ export function QuickAddMenu({
                 </div>
               </details>
               <div className="md:col-span-2">
-                <Button type="submit">Add Communication Log</Button>
+                <FormSubmitButton idleLabel="Add Communication Log" pendingLabel="Saving..." />
               </div>
             </form>
           </FormSection>

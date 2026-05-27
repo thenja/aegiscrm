@@ -13,6 +13,7 @@ import {
   DrawerSection,
 } from "@/components/ui/detail-drawer"
 import { Input } from "@/components/ui/input"
+import { FormSubmitButton } from "@/components/ui/form-submit-button"
 import { CollapsibleEditSection, EmptyState, ItemCard, PillBadge } from "@/components/ui/patterns"
 import { formatDisplayDate } from "@/lib/date"
 import type { ExternalContactViewRow, ExternalContactRelatedWorkRow } from "@/lib/data/external-contacts"
@@ -218,7 +219,7 @@ export function ExternalContactsListWithDrawer({
                     <option value="true">Active</option>
                     <option value="false">Inactive</option>
                   </select>
-                  <Button type="submit" variant="secondary" size="xs">Save</Button>
+                  <FormSubmitButton idleLabel="Save" pendingLabel="Saving..." variant="secondary" size="xs" />
                 </form>
               </DrawerSection>
             ) : null}

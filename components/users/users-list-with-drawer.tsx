@@ -13,6 +13,7 @@ import {
   DrawerSection,
 } from "@/components/ui/detail-drawer"
 import { Input } from "@/components/ui/input"
+import { FormSubmitButton } from "@/components/ui/form-submit-button"
 import { EmptyState, ItemCard, PillBadge } from "@/components/ui/patterns"
 import { APP_ROLES } from "@/types/roles"
 
@@ -112,7 +113,7 @@ export function UsersListWithDrawer({
                   <option value="true">Active</option>
                   <option value="false">Inactive</option>
                 </select>
-                <Button type="submit" variant="secondary" size="sm">Save User Changes</Button>
+                <FormSubmitButton idleLabel="Save User Changes" pendingLabel="Saving..." variant="secondary" size="sm" />
               </form>
             </DrawerSection>
             <DrawerActions>

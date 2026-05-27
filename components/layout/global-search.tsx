@@ -93,12 +93,12 @@ export function GlobalSearch() {
   }, [results])
 
   return (
-    <div ref={rootRef} className="relative min-w-0 flex-1">
-      <div className="flex min-w-0 items-center gap-2 rounded-md border border-border bg-white px-2 shadow-sm">
+    <div ref={rootRef} className="relative min-w-0 flex-1 md:max-w-xl">
+      <div className="flex min-w-0 items-center gap-1.5 rounded-md border border-border bg-white px-2 shadow-sm">
         <Search size={15} className="shrink-0 text-text-secondary" />
         <Input
-          className="h-8 min-w-0 flex-1 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
-          placeholder="Search..."
+          className="h-8 min-w-0 flex-1 border-0 bg-transparent px-0 text-sm shadow-none focus-visible:ring-0"
+          placeholder="Search clients, tasks, events..."
           aria-label="Global Search"
           value={query}
           onFocus={() => setOpen(true)}

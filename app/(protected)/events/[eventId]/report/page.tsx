@@ -30,10 +30,10 @@ export default async function EventReportPage({ params }: Params) {
   return (
     <div className="space-y-4">
       <PageHeader
-        title={`${event.event_name} — Attendance Report`}
+        title={`${event.event_name} - Attendance Report`}
         description={`${event.client_name} | ${formatDisplayDate(event.event_date)}${event.venue ? ` | ${event.venue}` : ""}`}
         action={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button size="sm" variant="ghost" asChild>
               <Link href={`/events/${resolvedParams.eventId}`}>Back to Event</Link>
             </Button>
@@ -119,3 +119,4 @@ export default async function EventReportPage({ params }: Params) {
     </div>
   )
 }
+

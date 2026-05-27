@@ -18,6 +18,7 @@ import {
   DrawerSection,
 } from "@/components/ui/detail-drawer"
 import { Input } from "@/components/ui/input"
+import { FormSubmitButton } from "@/components/ui/form-submit-button"
 import { CollapsibleEditSection, EmptyState, ItemCard, PillBadge } from "@/components/ui/patterns"
 import { StatusBadge } from "@/components/ui/status-badge"
 import {
@@ -105,9 +106,7 @@ export function EventGuestsListWithDrawer({
                   <input type="hidden" name="return_to" value={returnTo} />
                   <input type="hidden" name="event_id" value={guest.event_id} />
                   <input type="hidden" name="guest_id" value={guest.guest_id} />
-                  <Button type="submit" size="xs" variant="secondary">
-                    Check In
-                  </Button>
+                  <FormSubmitButton idleLabel="Check In" pendingLabel="Checking..." size="xs" variant="secondary" />
                 </form>
               ) : null}
               {canUndoCheckIn && guest.attendance_status === "Attended" ? (
@@ -229,9 +228,7 @@ export function EventGuestsListWithDrawer({
                   <input type="hidden" name="checked_in_at" value={selectedGuest.checked_in_at ?? ""} />
                   <input type="hidden" name="checked_in_by_nickname" value={selectedGuest.checked_in_by_nickname ?? ""} />
                   <input type="hidden" name="checked_in_session_id" value={selectedGuest.checked_in_session_id ?? ""} />
-                  <Button type="submit" size="xs" variant="secondary">
-                    Save
-                  </Button>
+                  <FormSubmitButton idleLabel="Save" pendingLabel="Saving..." size="xs" variant="secondary" />
                 </form>
               </CollapsibleEditSection>
             ) : null}
@@ -244,9 +241,7 @@ export function EventGuestsListWithDrawer({
                       <input type="hidden" name="return_to" value={returnTo} />
                       <input type="hidden" name="event_id" value={selectedGuest.event_id} />
                       <input type="hidden" name="guest_id" value={selectedGuest.guest_id} />
-                      <Button type="submit" size="xs" variant="secondary">
-                        Mark Attended
-                      </Button>
+                      <FormSubmitButton idleLabel="Mark Attended" pendingLabel="Checking..." size="xs" variant="secondary" />
                     </form>
                   ) : null}
 
@@ -255,9 +250,7 @@ export function EventGuestsListWithDrawer({
                       <input type="hidden" name="return_to" value={returnTo} />
                       <input type="hidden" name="event_id" value={selectedGuest.event_id} />
                       <input type="hidden" name="guest_id" value={selectedGuest.guest_id} />
-                      <Button type="submit" size="xs" variant="danger">
-                        Undo Check In
-                      </Button>
+                      <FormSubmitButton idleLabel="Undo Check In" pendingLabel="Undoing..." size="xs" variant="danger" />
                     </form>
                   ) : null}
 

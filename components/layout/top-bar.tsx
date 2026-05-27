@@ -43,7 +43,7 @@ export function TopBar({
         "left-0"
       )}
     >
-      <div className="flex h-full items-center justify-between gap-1.5 px-2.5 sm:gap-2 sm:px-3 md:px-4">
+      <div className="flex h-full items-center justify-between gap-1 px-2 sm:gap-1.5 sm:px-3 md:px-4">
         <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2">
           <button
             type="button"
@@ -65,18 +65,18 @@ export function TopBar({
           <GlobalSearch />
         </div>
 
-        <div className="flex shrink-0 items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
           <QuickAddMenu role={profile.role} currentUserId={profile.user_id} />
 
           <div ref={profileMenuRef} className="relative">
             <button
               type="button"
               onClick={() => setProfileMenuOpen((prev) => !prev)}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-white px-2 hover:bg-slate-50"
+              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-white px-1.5 sm:px-2 hover:bg-slate-50"
               aria-label="Open profile menu"
             >
               <User size={14} className="text-text-secondary" />
-              <span className="hidden max-w-[120px] truncate text-xs font-semibold text-text-primary sm:inline">
+              <span className="hidden max-w-[110px] truncate text-xs font-semibold text-text-primary lg:inline">
                 {profile.full_name}
               </span>
             </button>
