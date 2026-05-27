@@ -31,22 +31,23 @@ type SearchParams = {
   reset_create_event?: string
 }
 
-export default async function EventsPage({ searchParams }: { searchParams?: SearchParams }) {
+export default async function EventsPage({ searchParams }: { searchParams?: Promise<SearchParams> }) {
   const auth = await requireAuth()
   const canManage = hasRole(auth.profile.role, ["Director", "Team Lead", "Team Member"])
+  const resolvedSearchParams = searchParams ? await searchParams : {}
 
   const [events, clients] = await Promise.all([
     listEvents({
-      query: searchParams?.query,
-      client_id: searchParams?.client_id,
-      status: searchParams?.status,
+      query: resolvedSearchParams?.query,
+      client_id: resolvedSearchParams?.client_id,
+      status: resolvedSearchParams?.status,
     }),
     listClients({}),
   ])
 
   return (
     <div className="space-y-4">
-      <ActionFeedback feedback={searchParams?.feedback} message={searchParams?.message} />
+      <ActionFeedback feedback={resolvedSearchParams?.feedback} message={resolvedSearchParams?.message} />
 
       <PageHeader
         title="Events"
@@ -56,7 +57,7 @@ export default async function EventsPage({ searchParams }: { searchParams?: Sear
             <ModalForm triggerLabel="+ New Event" title="Create Event">
               <FormSection title="Event Setup" description="Set core event details first.">
                 <form
-                  key={searchParams?.reset_create_event ?? "create-event-form"}
+                  key={resolvedSearchParams?.reset_create_event ?? "create-event-form"}
                   action={createEventAction}
                   className="grid grid-cols-1 gap-3 md:grid-cols-2"
                 >
@@ -119,8 +120,8 @@ export default async function EventsPage({ searchParams }: { searchParams?: Sear
       <SectionCard title="Filters" description="Search by event name, code, or venue.">
         <FilterBar>
           <form method="get" className="grid grid-cols-1 gap-3 md:grid-cols-4">
-            <Input name="query" defaultValue={searchParams?.query ?? ""} placeholder="Search event / code / venue" />
-            <select name="client_id" defaultValue={searchParams?.client_id ?? ""} className="h-10 rounded-md border border-border px-3 text-sm">
+            <Input name="query" defaultValue={resolvedSearchParams?.query ?? ""} placeholder="Search event / code / venue" />
+            <select name="client_id" defaultValue={resolvedSearchParams?.client_id ?? ""} className="h-10 rounded-md border border-border px-3 text-sm">
               <option value="">All Clients</option>
               {clients.map((client) => (
                 <option key={client.client_id} value={client.client_id}>
@@ -128,7 +129,7 @@ export default async function EventsPage({ searchParams }: { searchParams?: Sear
                 </option>
               ))}
             </select>
-            <select name="status" defaultValue={searchParams?.status ?? ""} className="h-10 rounded-md border border-border px-3 text-sm">
+            <select name="status" defaultValue={resolvedSearchParams?.status ?? ""} className="h-10 rounded-md border border-border px-3 text-sm">
               <option value="">All Status</option>
               {ATTENDANCE_EVENT_STATUSES.map((value) => (
                 <option key={value} value={value}>
