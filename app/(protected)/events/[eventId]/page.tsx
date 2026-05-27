@@ -45,6 +45,7 @@ type SearchParams = {
   feedback?: string
   message?: string
   reset_create_event_guest?: string
+  reset_event_guest_action?: string
 }
 
 type Params = {
@@ -213,7 +214,11 @@ export default async function EventDetailsPage({ params, searchParams }: Params)
         description="Search, check in, and manage guest attendance."
         action={
           canManage ? (
-            <ModalForm triggerLabel="+ Add Guest" title="Add Guest">
+            <ModalForm
+              triggerLabel="+ Add Guest"
+              title="Add Guest"
+              autoCloseToken={resolvedSearchParams?.feedback === "success" ? resolvedSearchParams?.reset_create_event_guest : undefined}
+            >
               <FormSection title="Guest Details">
                 <form
                   key={resolvedSearchParams?.reset_create_event_guest ?? "create-event-guest-form"}
@@ -297,6 +302,7 @@ export default async function EventDetailsPage({ params, searchParams }: Params)
           canUndoCheckIn={canUndoCheckIn}
           seatingMode={event.seating_mode}
           initialSelectedGuestId={resolvedSearchParams?.guest_id ?? null}
+          autoCloseToken={resolvedSearchParams?.feedback === "success" ? resolvedSearchParams?.reset_event_guest_action : undefined}
         />
       </SectionCard>
 

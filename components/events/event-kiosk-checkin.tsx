@@ -37,6 +37,9 @@ type KioskGuest = {
   checked_in_by_nickname: string | null
 }
 
+const KIOSK_EVENT_CODE_KEY = "aegis-kiosk-event-code"
+const KIOSK_STAFF_NICKNAME_KEY = "aegis-kiosk-staff-nickname"
+
 function sessionId() {
   if (typeof window === "undefined") return "kiosk-session"
   const key = "aegis-kiosk-session-id"
@@ -61,6 +64,7 @@ export function EventKioskCheckin() {
   const [activeGuestId, setActiveGuestId] = useState<string | null>(null)
   const [hasSearched, setHasSearched] = useState(false)
   const latestSearchRef = useRef("")
+  const searchInputRef = useRef<HTMLInputElement | null>(null)
 
   const attendanceLabel = useMemo(() => {
     if (!eventInfo) return "-"
@@ -107,44 +111,65 @@ export function EventKioskCheckin() {
     }
   }, [eventCode])
 
-  const loadEvent = useCallback(async () => {
-    if (eventCode.trim().length < 4) {
+  const loadEvent = useCallback(async (options?: { preserveView?: boolean; silent?: boolean; explicitEventCode?: string; explicitStaffNickname?: string }) => {
+    const resolvedEventCode = (options?.explicitEventCode ?? eventCode).trim()
+    const resolvedStaffNickname = (options?.explicitStaffNickname ?? staffNickname).trim()
+
+    if (resolvedEventCode.length < 4) {
       setMessage("Please enter a valid event code.")
       setMessageTone("error")
       return
     }
 
-    if (staffNickname.trim().length < 2) {
+    if (resolvedStaffNickname.length < 2) {
       setMessage("Staff nickname is required.")
       setMessageTone("error")
       return
     }
 
     setLoadingEvent(true)
-    setMessage(null)
+    if (!options?.silent) {
+      setMessage(null)
+    }
     try {
-      const response = await fetch(`/api/events/kiosk/event?event_code=${encodeURIComponent(eventCode.trim())}`)
+      const response = await fetch(`/api/events/kiosk/event?event_code=${encodeURIComponent(resolvedEventCode)}`)
       const payload = (await response.json()) as { event?: KioskEvent; error?: string }
       if (!response.ok || !payload.event) {
         throw new Error(payload.error ?? "Event not found.")
       }
 
+      if (resolvedEventCode !== eventCode) {
+        setEventCode(resolvedEventCode.toUpperCase())
+      }
+      if (resolvedStaffNickname !== staffNickname) {
+        setStaffNickname(resolvedStaffNickname)
+      }
       setEventInfo(payload.event)
-      setSearchText("")
-      setGuests([])
-      setHasSearched(false)
-      setMessage("Event loaded. Start searching guests to check in.")
-      setMessageTone("info")
+      if (!options?.preserveView) {
+        setSearchText("")
+        setGuests([])
+        setHasSearched(false)
+      }
+      if (!options?.silent) {
+        setMessage("Event loaded. Start searching guests to check in.")
+        setMessageTone("info")
+      }
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(KIOSK_EVENT_CODE_KEY, resolvedEventCode.toUpperCase())
+        window.localStorage.setItem(KIOSK_STAFF_NICKNAME_KEY, resolvedStaffNickname)
+      }
     } catch (error) {
       setEventInfo(null)
       setGuests([])
       setHasSearched(false)
-      setMessage(error instanceof Error ? error.message : "Failed to load event.")
-      setMessageTone("error")
+      if (!options?.silent) {
+        setMessage(error instanceof Error ? error.message : "Failed to load event.")
+        setMessageTone("error")
+      }
     } finally {
       setLoadingEvent(false)
     }
-  }, [eventCode, searchGuests, staffNickname])
+  }, [eventCode, staffNickname])
 
   const markAttended = useCallback(async (guestId: string) => {
     if (!eventInfo) return
@@ -184,8 +209,11 @@ export function EventKioskCheckin() {
         setMessageTone("info")
       }
 
-      await searchGuests(searchText.trim(), eventCode.trim())
-      await loadEvent()
+      const currentQuery = searchText.trim()
+      if (currentQuery) {
+        await searchGuests(currentQuery, eventCode.trim())
+      }
+      await loadEvent({ preserveView: true, silent: true })
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Failed to mark attended.")
       setMessageTone("error")
@@ -198,6 +226,33 @@ export function EventKioskCheckin() {
     latestSearchRef.current = searchText
   }, [searchText])
 
+  useEffect(() => {
+    if (!eventInfo) return
+    const timer = window.setTimeout(() => {
+      searchInputRef.current?.focus()
+    }, 30)
+    return () => window.clearTimeout(timer)
+  }, [eventInfo])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const fromQuery = searchParams.get("event_code")?.trim().toUpperCase()
+    const persistedEventCode = window.localStorage.getItem(KIOSK_EVENT_CODE_KEY)?.trim().toUpperCase()
+    const persistedStaffNickname = window.localStorage.getItem(KIOSK_STAFF_NICKNAME_KEY)?.trim()
+    const restoredEventCode = fromQuery || persistedEventCode
+
+    if (restoredEventCode && persistedStaffNickname && persistedStaffNickname.length > 1) {
+      setEventCode(restoredEventCode)
+      setStaffNickname(persistedStaffNickname)
+      void loadEvent({
+        explicitEventCode: restoredEventCode,
+        explicitStaffNickname: persistedStaffNickname,
+        preserveView: true,
+        silent: true,
+      })
+    }
+  }, [loadEvent, searchParams])
+
   const eventIdForChannel = eventInfo?.event_id
 
   useEffect(() => {
@@ -209,8 +264,11 @@ export function EventKioskCheckin() {
         "postgres_changes",
         { event: "*", schema: "public", table: "event_guests", filter: `event_id=eq.${eventIdForChannel}` },
         () => {
-          void searchGuests(latestSearchRef.current.trim())
-          void loadEvent()
+          const currentQuery = latestSearchRef.current.trim()
+          if (currentQuery) {
+            void searchGuests(currentQuery, eventCode.trim())
+          }
+          void loadEvent({ preserveView: true, silent: true })
         }
       )
       .subscribe()
@@ -218,7 +276,7 @@ export function EventKioskCheckin() {
     return () => {
       void supabase.removeChannel(channel)
     }
-  }, [eventIdForChannel, loadEvent, searchGuests])
+  }, [eventCode, eventIdForChannel, loadEvent, searchGuests])
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -236,6 +294,12 @@ export function EventKioskCheckin() {
   }, [eventCode, eventInfo, searchGuests, searchText])
 
   const clearSession = useCallback(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(KIOSK_EVENT_CODE_KEY)
+      window.localStorage.removeItem(KIOSK_STAFF_NICKNAME_KEY)
+    }
+    setEventCode("")
+    setStaffNickname("")
     setEventInfo(null)
     setGuests([])
     setSearchText("")
@@ -248,8 +312,8 @@ export function EventKioskCheckin() {
       <div className="mx-auto max-w-6xl rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_18px_40px_rgba(15,23,42,0.08)] md:p-7">
         {eventInfo ? (
           <header className="rounded-2xl border border-slate-200 bg-white p-4 md:p-5">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="min-w-0 space-y-3">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0 space-y-2">
                 <div className="flex items-center gap-3">
                   {eventInfo.client_logo_url ? (
                     <div className="relative h-14 w-28 overflow-hidden rounded-md border border-slate-200 bg-white">
@@ -257,29 +321,29 @@ export function EventKioskCheckin() {
                     </div>
                   ) : null}
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Client</p>
-                    <h1 className="text-xl font-semibold text-navy md:text-2xl">{eventInfo.client_name ?? "Client"}</h1>
+                    {eventInfo.client_name ? (
+                      <p className="text-xl font-semibold text-navy md:text-2xl">{eventInfo.client_name}</p>
+                    ) : null}
+                    <h1 className="text-xl font-semibold text-navy md:text-2xl">{eventInfo.event_name}</h1>
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Event</p>
-                  <p className="text-lg font-semibold text-navy md:text-xl">{eventInfo.event_name}</p>
-                  <p className="mt-1 text-sm text-slate-600">
+                  <p className="text-sm text-slate-600">
                     {formatDisplayDate(eventInfo.event_date)}
-                    {eventInfo.venue ? ` | ${eventInfo.venue}` : ""}
-                    {eventInfo.seating_mode ? ` | ${eventInfo.seating_mode}` : ""}
+                    {eventInfo.venue ? ` · ${eventInfo.venue}` : ""}
+                    {eventInfo.seating_mode === "With Table" ? " · With Table" : ""}
                   </p>
+                  <p className="mt-1 text-xs font-medium uppercase tracking-wide text-slate-500">Managed by AEGIS COMMUNICATION SDN BHD</p>
                 </div>
               </div>
-              <div className="sticky top-3 self-start space-y-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
-                <p className="text-[11px] text-slate-500">Checking in as</p>
-                <p className="font-semibold text-navy">{staffNickname || "-"}</p>
-                <p className="text-[11px] text-slate-500">Event Code</p>
-                <p className="font-semibold text-navy">{eventCode}</p>
-                <div className="flex gap-2 pt-1">
-                  <Button type="button" variant="ghost" size="sm" onClick={clearSession}>Switch Event</Button>
-                  <Button type="button" variant="ghost" size="sm" onClick={clearSession}>Change Staff</Button>
-                </div>
+              <div className="sticky top-3 self-start rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
+                <span className="font-medium text-slate-600">Checking in as:</span>{" "}
+                <span className="font-semibold text-navy">{staffNickname || "-"}</span>
+                <span className="mx-1.5 text-slate-400">·</span>
+                <span className="font-medium text-slate-600">Event Code:</span>{" "}
+                <span className="font-semibold text-navy">{eventCode}</span>
+                <span className="mx-1.5 text-slate-400">·</span>
+                <button type="button" onClick={clearSession} className="font-semibold text-navy hover:underline">Switch</button>
               </div>
             </div>
           </header>
@@ -324,22 +388,13 @@ export function EventKioskCheckin() {
             <section className="mt-5 rounded-xl border border-slate-200 bg-white p-4 md:p-5">
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <div>
-                  <h2 className="text-2xl font-semibold text-navy md:text-3xl">Search Guest</h2>
-                  <p className="mt-1 text-sm text-slate-600">Search guest name, company, phone, table number or category</p>
+                  <h2 className="text-2xl font-semibold text-navy md:text-3xl">Guest Check-in</h2>
+                  <p className="mt-1 text-sm text-slate-600">Search by guest name, company, phone, table number or category.</p>
                 </div>
-                <div className="grid grid-cols-3 gap-2 text-center">
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-                    <p className="text-[11px] uppercase tracking-wide text-slate-500">Attended / Total</p>
-                    <p className="text-base font-semibold text-navy">{attendanceLabel}</p>
-                  </div>
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-                    <p className="text-[11px] uppercase tracking-wide text-slate-500">Not Arrived</p>
-                    <p className="text-base font-semibold text-navy">{notArrivedCount}</p>
-                  </div>
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-                    <p className="text-[11px] uppercase tracking-wide text-slate-500">Attendance %</p>
-                    <p className="text-base font-semibold text-navy">{attendancePercent}</p>
-                  </div>
+                <div className="flex flex-wrap items-center gap-2 text-sm text-slate-700">
+                  <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 font-medium text-navy">{attendanceLabel} Checked In</span>
+                  <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 font-medium text-navy">{notArrivedCount} Not Arrived</span>
+                  <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 font-medium text-navy">{attendancePercent} Attendance</span>
                 </div>
               </div>
 
@@ -347,6 +402,7 @@ export function EventKioskCheckin() {
                 <div className="flex items-center gap-2">
                   <Search size={20} className="text-slate-500" />
                   <input
+                    ref={searchInputRef}
                     value={searchText}
                     onChange={(event) => setSearchText(event.target.value)}
                     placeholder="Search guest name, company, phone, table number or category"
@@ -360,14 +416,14 @@ export function EventKioskCheckin() {
             <section className="mt-4 space-y-3">
               {loadingSearch ? <p className="text-sm text-slate-600">Searching guests...</p> : null}
               {!loadingSearch && !hasSearched ? (
-                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center">
+                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-center">
                   <p className="text-sm font-medium text-navy">Start by searching for a guest.</p>
                 </div>
               ) : null}
 
               {!loadingSearch && hasSearched && guests.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center">
-                  <p className="text-sm font-medium text-navy">No guests found.</p>
+                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-center">
+                  <p className="text-sm font-medium text-navy">No matching guest found.</p>
                   <p className="mt-1 text-xs text-slate-500">Try searching by guest name, company, phone, table number, or category.</p>
                 </div>
               ) : null}
@@ -435,7 +491,7 @@ export function EventKioskCheckin() {
         ) : null}
 
         <footer className="mt-6 border-t border-slate-200 pt-3 text-center text-xs text-slate-500">
-          Managed by AEGIS COMMUNICATION SDN BHD
+          Powered by AEGIS COMMUNICATION
         </footer>
       </div>
     </div>

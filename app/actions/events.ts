@@ -86,6 +86,12 @@ function revalidateEventPaths(eventId: string) {
   revalidatePath(`/events/${eventId}/live`)
 }
 
+function guestActionResetParams() {
+  return {
+    reset_event_guest_action: Date.now().toString(),
+  }
+}
+
 async function getEventForAction(eventId: string) {
   const supabase = await createClient()
   const { data: event, error } = await supabase
@@ -235,6 +241,7 @@ export async function createEventGuestAction(formData: FormData) {
     revalidateEventPaths(payload.event_id)
     redirectTarget = withFeedback(returnTo, "success", "Guest added successfully.", {
       reset_create_event_guest: Date.now().toString(),
+      ...guestActionResetParams(),
     })
   } catch (error) {
     if (
@@ -279,7 +286,7 @@ export async function updateEventGuestAction(formData: FormData) {
     })
 
     revalidateEventPaths(payload.event_id)
-    redirectTarget = withFeedback(returnTo, "success", "Guest updated successfully.")
+    redirectTarget = withFeedback(returnTo, "success", "Guest updated successfully.", guestActionResetParams())
   } catch (error) {
     if (error instanceof Error && (error.message.includes("required") || error.message.includes("invalid"))) {
       redirectTarget = withFeedback(returnTo, "error", error.message)
@@ -305,7 +312,7 @@ export async function deleteEventGuestAction(formData: FormData) {
     if (error) throw new Error(error.message)
 
     revalidateEventPaths(eventId)
-    redirect(withFeedback(returnTo, "success", "Guest removed successfully."))
+    redirect(withFeedback(returnTo, "success", "Guest removed successfully.", guestActionResetParams()))
   } catch {
     redirect(withFeedback(returnTo, "error", "Something went wrong. Please try again."))
   }
@@ -369,7 +376,7 @@ export async function checkInEventGuestInternalAction(formData: FormData) {
     if (logError) throw new Error(logError.message)
 
     revalidateEventPaths(eventId)
-    redirect(withFeedback(returnTo, "success", "Guest checked in successfully."))
+    redirect(withFeedback(returnTo, "success", "Guest checked in successfully.", guestActionResetParams()))
   } catch {
     redirect(withFeedback(returnTo, "error", "Something went wrong. Please try again."))
   }
@@ -420,7 +427,7 @@ export async function undoEventGuestCheckInAction(formData: FormData) {
     if (logError) throw new Error(logError.message)
 
     revalidateEventPaths(eventId)
-    redirect(withFeedback(returnTo, "success", "Check-in undone successfully."))
+    redirect(withFeedback(returnTo, "success", "Check-in undone successfully.", guestActionResetParams()))
   } catch (error) {
     if (error instanceof Error && error.message === "Guest is not checked in") {
       redirect(withFeedback(returnTo, "error", "Guest is not currently checked in."))
