@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 import { updateDeliverableStatusAction } from "@/app/actions/deliverables"
 import { updateTaskStatusAction } from "@/app/actions/tasks"
@@ -106,6 +106,8 @@ export function WorkItemsListWithDrawer({
 }) {
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [statusEditorKey, setStatusEditorKey] = useState<string | null>(null)
+  const [contactSearchText, setContactSearchText] = useState("")
+  const [selectedExternalContactId, setSelectedExternalContactId] = useState("")
   const selectedItem = useMemo(() => rows.find((row) => workItemKey(row) === selectedKey) ?? null, [rows, selectedKey])
 
   if (rows.length === 0) {
@@ -120,6 +122,29 @@ export function WorkItemsListWithDrawer({
   }
   const selectedPeopleInvolved = selectedItem ? peopleInvolvedByWorkItem[workItemKey(selectedItem)] ?? [] : []
   const canManageSelectedPeopleInvolved = canManagePeopleInvolved && Boolean(selectedItem?.clientId)
+  const selectedContactLabelMap = useMemo(
+    () =>
+      new Map(
+        externalContactOptions.map((contact) => [
+          contact.external_contact_id,
+          `${contact.name}${contact.organisation ? `, ${contact.organisation}` : ""} (${contact.contact_type})`,
+        ])
+      ),
+    [externalContactOptions]
+  )
+  const filteredExternalContactOptions = useMemo(() => {
+    const query = contactSearchText.trim().toLowerCase()
+    if (!query) return externalContactOptions
+    return externalContactOptions.filter((contact) => {
+      const haystack = `${contact.name} ${contact.organisation ?? ""} ${contact.contact_type}`.toLowerCase()
+      return haystack.includes(query)
+    })
+  }, [contactSearchText, externalContactOptions])
+
+  useEffect(() => {
+    setContactSearchText("")
+    setSelectedExternalContactId("")
+  }, [selectedKey])
 
   return (
     <>
@@ -345,9 +370,25 @@ export function WorkItemsListWithDrawer({
                     <input type="hidden" name="deliverable_id" value={selectedItem.itemType === "Deliverable" ? selectedItem.itemId : ""} />
                     <input type="hidden" name="task_id" value={selectedItem.itemType === "Task" ? selectedItem.itemId : ""} />
                     <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-                      <select name="external_contact_id" required className="h-9 rounded-md border border-border px-2 text-sm md:col-span-2">
+                      <input
+                        type="text"
+                        value={contactSearchText}
+                        onChange={(event) => setContactSearchText(event.target.value)}
+                        placeholder="Search contact name, organisation, or type"
+                        className="h-9 rounded-md border border-border px-2 text-sm md:col-span-2"
+                      />
+                      <select
+                        name="external_contact_id"
+                        required
+                        value={selectedExternalContactId}
+                        onChange={(event) => setSelectedExternalContactId(event.target.value)}
+                        className="h-9 rounded-md border border-border px-2 text-sm md:col-span-2"
+                      >
                         <option value="">Select External Contact</option>
-                        {externalContactOptions.map((contact) => (
+                        {selectedExternalContactId && !filteredExternalContactOptions.some((c) => c.external_contact_id === selectedExternalContactId) ? (
+                          <option value={selectedExternalContactId}>{selectedContactLabelMap.get(selectedExternalContactId) ?? "Selected contact"}</option>
+                        ) : null}
+                        {filteredExternalContactOptions.map((contact) => (
                           <option key={contact.external_contact_id} value={contact.external_contact_id}>
                             {contact.name}
                             {contact.organisation ? `, ${contact.organisation}` : ""}
@@ -355,6 +396,9 @@ export function WorkItemsListWithDrawer({
                           </option>
                         ))}
                       </select>
+                      {contactSearchText.trim().length > 0 && filteredExternalContactOptions.length === 0 ? (
+                        <p className="text-xs text-text-secondary md:col-span-2">No contacts match your search.</p>
+                      ) : null}
                       <select name="purpose" defaultValue="Other" className="h-9 rounded-md border border-border px-2 text-sm">
                         {EXTERNAL_INVOLVEMENT_PURPOSES.map((value) => (
                           <option key={value} value={value}>{value}</option>
