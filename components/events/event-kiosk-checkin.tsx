@@ -255,14 +255,10 @@ export function EventKioskCheckin() {
                     <div className="relative h-14 w-28 overflow-hidden rounded-md border border-slate-200 bg-white">
                       <Image src={eventInfo.client_logo_url} alt={`${eventInfo.client_name ?? "Client"} logo`} fill className="object-contain p-1" sizes="112px" />
                     </div>
-                  ) : (
-                    <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-navy">
-                      {eventInfo.client_name ?? "Client"}
-                    </div>
-                  )}
+                  ) : null}
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Client</p>
-                    <h1 className="text-xl font-semibold text-navy md:text-2xl">{eventInfo.client_name ?? "Event Check-in"}</h1>
+                    <h1 className="text-xl font-semibold text-navy md:text-2xl">{eventInfo.client_name ?? "Client"}</h1>
                   </div>
                 </div>
                 <div>
@@ -275,10 +271,10 @@ export function EventKioskCheckin() {
                   </p>
                 </div>
               </div>
-              <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
-                <p className="text-xs text-slate-500">Checking in as</p>
+              <div className="sticky top-3 self-start space-y-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
+                <p className="text-[11px] text-slate-500">Checking in as</p>
                 <p className="font-semibold text-navy">{staffNickname || "-"}</p>
-                <p className="text-xs text-slate-500">Event Code</p>
+                <p className="text-[11px] text-slate-500">Event Code</p>
                 <p className="font-semibold text-navy">{eventCode}</p>
                 <div className="flex gap-2 pt-1">
                   <Button type="button" variant="ghost" size="sm" onClick={clearSession}>Switch Event</Button>
@@ -439,7 +435,7 @@ export function EventKioskCheckin() {
         ) : null}
 
         <footer className="mt-6 border-t border-slate-200 pt-3 text-center text-xs text-slate-500">
-          Managed by AEGIS COMMUNICATION
+          Managed by AEGIS COMMUNICATION SDN BHD
         </footer>
       </div>
     </div>
