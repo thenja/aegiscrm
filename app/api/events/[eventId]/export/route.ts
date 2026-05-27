@@ -1,13 +1,11 @@
 import * as XLSX from "xlsx"
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 
 import { requireAuth } from "@/lib/auth"
 import { getEventById, getEventLiveData } from "@/lib/data/events"
 
 type Params = {
-  params: {
-    eventId: string
-  }
+  params: Promise<{ eventId: string }>
 }
 
 function csvEscape(value: string | number | null | undefined) {
@@ -18,16 +16,17 @@ function csvEscape(value: string | number | null | undefined) {
   return text
 }
 
-export async function GET(request: Request, { params }: Params) {
+export async function GET(request: NextRequest, { params }: Params) {
   try {
     await requireAuth()
-    const event = await getEventById(params.eventId)
+    const { eventId } = await params
+    const event = await getEventById(eventId)
     if (!event) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 })
     }
 
     const format = new URL(request.url).searchParams.get("format") === "xlsx" ? "xlsx" : "csv"
-    const payload = await getEventLiveData(params.eventId)
+    const payload = await getEventLiveData(eventId)
 
     const guestsRows = payload.guests.map((guest) => ({
       "Event Name": payload.event.event_name,

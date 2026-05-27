@@ -8,7 +8,7 @@ type CookieToSet = {
 }
 
 export async function createClient() {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
