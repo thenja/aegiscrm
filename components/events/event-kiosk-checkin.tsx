@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { Search, CheckCircle2 } from "lucide-react"
+import { Search, CheckCircle2, CircleCheck, Info, AlertCircle } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 
@@ -308,8 +308,8 @@ export function EventKioskCheckin() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(145deg,#f8fafc_0%,#f8fbff_45%,#eef3fb_100%)] p-4 md:p-8">
-      <div className="mx-auto max-w-6xl rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_18px_40px_rgba(15,23,42,0.08)] md:p-7">
+    <div className="min-h-screen bg-[linear-gradient(145deg,#f8fafc_0%,#f4f8fb_45%,#ecf4f6_100%)] p-4 md:p-8">
+      <div className="mx-auto max-w-6xl rounded-2xl border border-slate-200/90 bg-white p-5 shadow-[0_18px_40px_rgba(15,23,42,0.08)] md:p-7">
         {eventInfo ? (
           <header className="rounded-2xl border border-slate-200 bg-white p-4 md:p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -333,10 +333,9 @@ export function EventKioskCheckin() {
                     {eventInfo.venue ? ` · ${eventInfo.venue}` : ""}
                     {eventInfo.seating_mode === "With Table" ? " · With Table" : ""}
                   </p>
-                  <p className="mt-1 text-xs font-medium uppercase tracking-wide text-slate-500">Managed by AEGIS COMMUNICATION SDN BHD</p>
                 </div>
               </div>
-              <div className="sticky top-3 self-start rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
+              <div className="sticky top-3 self-start rounded-full border border-slate-200 bg-slate-50/90 px-3 py-2 text-xs text-slate-700">
                 <span className="font-medium text-slate-600">Checking in as:</span>{" "}
                 <span className="font-semibold text-navy">{staffNickname || "-"}</span>
                 <span className="mx-1.5 text-slate-400">·</span>
@@ -354,7 +353,6 @@ export function EventKioskCheckin() {
                 <Image src="/logo.png" alt="Aegis logo" fill className="object-contain p-1" sizes="96px" />
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Managed by AEGIS COMMUNICATION</p>
                 <h1 className="text-xl font-semibold text-navy">Event Kiosk Check-in</h1>
               </div>
             </div>
@@ -378,7 +376,7 @@ export function EventKioskCheckin() {
                 placeholder="Staff Nickname"
                 className="h-11 text-base"
               />
-              <Button type="button" onClick={loadEvent} disabled={loadingEvent} className="h-11 bg-navy hover:bg-navy/90">
+              <Button type="button" onClick={() => void loadEvent()} disabled={loadingEvent} className="h-11 bg-navy hover:bg-navy/90">
                 {loadingEvent ? "Loading..." : "Start Check-in"}
               </Button>
             </div>
@@ -394,11 +392,11 @@ export function EventKioskCheckin() {
                 <div className="flex flex-wrap items-center gap-2 text-sm text-slate-700">
                   <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 font-medium text-navy">{attendanceLabel} Checked In</span>
                   <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 font-medium text-navy">{notArrivedCount} Not Arrived</span>
-                  <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 font-medium text-navy">{attendancePercent} Attendance</span>
+                  <span className="rounded-full border border-teal-100 bg-teal-50 px-3 py-1.5 font-medium text-navy">{attendancePercent} Attendance</span>
                 </div>
               </div>
 
-              <div className="mt-4 rounded-xl border border-slate-200 bg-white px-3">
+              <div className="mt-4 rounded-xl border border-slate-200 bg-white px-3 shadow-[inset_0_1px_2px_rgba(15,23,42,0.04)]">
                 <div className="flex items-center gap-2">
                   <Search size={20} className="text-slate-500" />
                   <input
@@ -417,7 +415,7 @@ export function EventKioskCheckin() {
               {loadingSearch ? <p className="text-sm text-slate-600">Searching guests...</p> : null}
               {!loadingSearch && !hasSearched ? (
                 <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-center">
-                  <p className="text-sm font-medium text-navy">Start by searching for a guest.</p>
+                  <p className="text-sm font-medium text-navy">Search for a guest to begin check-in.</p>
                 </div>
               ) : null}
 
@@ -429,7 +427,7 @@ export function EventKioskCheckin() {
               ) : null}
 
               {guests.map((guest) => (
-                <article key={guest.guest_id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-[0_4px_16px_rgba(15,23,42,0.05)]">
+                <article key={guest.guest_id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-[0_6px_18px_rgba(15,23,42,0.05)]">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-lg font-semibold text-navy">{guest.guest_name}</p>
@@ -466,7 +464,7 @@ export function EventKioskCheckin() {
                         disabled={activeGuestId === guest.guest_id || !eventInfo}
                         className="h-10 bg-navy px-4 text-sm hover:bg-navy/90"
                       >
-                        {activeGuestId === guest.guest_id ? "Marking..." : "Check In Guest"}
+                        {activeGuestId === guest.guest_id ? "Marking..." : "Mark Attended"}
                       </Button>
                     )}
                   </div>
@@ -477,8 +475,8 @@ export function EventKioskCheckin() {
         )}
 
         {message ? (
-          <p
-            className={`mt-4 rounded-md border px-3 py-2 text-sm ${
+          <div
+            className={`mt-4 flex items-start gap-2 rounded-md border px-3 py-2 text-sm ${
               messageTone === "success"
                 ? "border-status-green/40 bg-status-green-bg text-status-green"
                 : messageTone === "error"
@@ -486,8 +484,11 @@ export function EventKioskCheckin() {
                   : "border-status-blue/40 bg-status-blue-bg text-status-blue"
             }`}
           >
-            {message}
-          </p>
+            {messageTone === "success" ? <CircleCheck size={16} className="mt-0.5" /> : null}
+            {messageTone === "error" ? <AlertCircle size={16} className="mt-0.5" /> : null}
+            {messageTone === "info" ? <Info size={16} className="mt-0.5" /> : null}
+            <p>{message}</p>
+          </div>
         ) : null}
 
         <footer className="mt-6 border-t border-slate-200 pt-3 text-center text-xs text-slate-500">
