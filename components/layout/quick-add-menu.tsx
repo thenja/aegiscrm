@@ -141,10 +141,10 @@ export function QuickAddMenu({
     return () => document.removeEventListener("mousedown", onClickOutside)
   }, [])
 
-  useEffect(() => {
-    if (!menuOpen || options.clients.length > 0 || loadingOptions) return
+  const loadQuickAddOptions = () => {
+    if (options.clients.length > 0 || loadingOptions) return
     setLoadingOptions(true)
-    fetch("/api/quick-add/options", { method: "GET", credentials: "same-origin" })
+    void fetch("/api/quick-add/options", { method: "GET", credentials: "same-origin" })
       .then((response) => (response.ok ? response.json() : null))
       .then((payload: QuickAddOptionsResponse | null) => {
         if (!payload) return
@@ -154,14 +154,13 @@ export function QuickAddMenu({
         })
       })
       .finally(() => setLoadingOptions(false))
-  }, [menuOpen, options.clients.length, loadingOptions])
+  }
 
   useEffect(() => {
     if (!commClientId) {
-      setCommWorkOptions({ deliverables: [], tasks: [] })
       return
     }
-    fetch(`/api/quick-add/client-work-options?client_id=${encodeURIComponent(commClientId)}`, {
+    void fetch(`/api/quick-add/client-work-options?client_id=${encodeURIComponent(commClientId)}`, {
       method: "GET",
       credentials: "same-origin",
     })
@@ -174,6 +173,8 @@ export function QuickAddMenu({
         })
       })
   }, [commClientId])
+
+  const resolvedCommWorkOptions = commClientId ? commWorkOptions : { deliverables: [], tasks: [] }
 
   const openType = (type: QuickAddType) => {
     setMenuOpen(false)
@@ -188,7 +189,13 @@ export function QuickAddMenu({
           variant="default"
           size="sm"
           className="h-8 px-2.5 sm:px-3"
-          onClick={() => setMenuOpen((prev) => !prev)}
+          onClick={() =>
+            setMenuOpen((prev) => {
+              const next = !prev
+              if (next) loadQuickAddOptions()
+              return next
+            })
+          }
         >
           <Plus size={14} className="sm:hidden" />
           <span className="hidden sm:inline">Quick Add</span>
@@ -540,13 +547,13 @@ export function QuickAddMenu({
                   <Input name="attachment_link" placeholder="Attachment / Link" />
                   <select name="related_deliverable_id" className="h-10 rounded-md border border-border px-3 text-sm">
                     <option value="">Related Deliverable</option>
-                    {commWorkOptions.deliverables.map((item) => (
+                    {resolvedCommWorkOptions.deliverables.map((item) => (
                       <option key={item.id} value={item.id}>{item.name}</option>
                     ))}
                   </select>
                   <select name="related_task_id" className="h-10 rounded-md border border-border px-3 text-sm">
                     <option value="">Related Task</option>
-                    {commWorkOptions.tasks.map((item) => (
+                    {resolvedCommWorkOptions.tasks.map((item) => (
                       <option key={item.id} value={item.id}>{item.name}</option>
                     ))}
                   </select>

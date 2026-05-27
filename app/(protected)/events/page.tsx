@@ -142,7 +142,7 @@ export default async function EventsPage({ searchParams }: { searchParams?: Prom
                 Apply
               </Button>
               <Button type="button" variant="ghost" asChild>
-                <a href="/events">Reset</a>
+                <Link href="/events">Reset</Link>
               </Button>
             </div>
           </form>

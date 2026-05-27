@@ -215,9 +215,9 @@ export default async function EventDetailsPage({ params, searchParams }: Params)
         action={
           canManage ? (
             <ModalForm
+              key={resolvedSearchParams?.feedback === "success" ? resolvedSearchParams?.reset_create_event_guest ?? "new-guest" : "new-guest"}
               triggerLabel="+ Add Guest"
               title="Add Guest"
-              autoCloseToken={resolvedSearchParams?.feedback === "success" ? resolvedSearchParams?.reset_create_event_guest : undefined}
             >
               <FormSection title="Guest Details">
                 <EventGuestCreateForm
@@ -250,19 +250,19 @@ export default async function EventDetailsPage({ params, searchParams }: Params)
           <div className="flex gap-2">
             <Button type="submit" variant="secondary">Apply</Button>
             <Button type="button" variant="ghost" asChild>
-              <a href={returnTo}>Reset</a>
+              <Link href={returnTo}>Reset</Link>
             </Button>
           </div>
         </form>
 
         <EventGuestsListWithDrawer
+          key={resolvedSearchParams?.feedback === "success" ? resolvedSearchParams?.reset_event_guest_action ?? "event-guests-list" : "event-guests-list"}
           guests={guests}
           returnTo={returnTo}
           canManage={canManage}
           canUndoCheckIn={canUndoCheckIn}
           seatingMode={event.seating_mode}
           initialSelectedGuestId={resolvedSearchParams?.guest_id ?? null}
-          autoCloseToken={resolvedSearchParams?.feedback === "success" ? resolvedSearchParams?.reset_event_guest_action : undefined}
         />
       </SectionCard>
 

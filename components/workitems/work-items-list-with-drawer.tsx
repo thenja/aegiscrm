@@ -81,6 +81,13 @@ function getItemHref(item: WorkItemDrawerRow) {
   return "/tasks"
 }
 
+function latestUpdatePreview(value: string | null) {
+  if (!value) return null
+  const trimmed = value.trim()
+  if (trimmed.length === 0 || trimmed.length > 80) return null
+  return trimmed
+}
+
 export function WorkItemsListWithDrawer({
   rows,
   emptyTitle,
@@ -109,17 +116,6 @@ export function WorkItemsListWithDrawer({
   const [contactSearchText, setContactSearchText] = useState("")
   const [selectedExternalContactId, setSelectedExternalContactId] = useState("")
   const selectedItem = useMemo(() => rows.find((row) => workItemKey(row) === selectedKey) ?? null, [rows, selectedKey])
-
-  if (rows.length === 0) {
-    return <EmptyState title={emptyTitle} description={emptyDescription} />
-  }
-
-  const latestUpdatePreview = (value: string | null) => {
-    if (!value) return null
-    const trimmed = value.trim()
-    if (trimmed.length === 0 || trimmed.length > 80) return null
-    return trimmed
-  }
   const selectedPeopleInvolved = selectedItem ? peopleInvolvedByWorkItem[workItemKey(selectedItem)] ?? [] : []
   const canManageSelectedPeopleInvolved = canManagePeopleInvolved && Boolean(selectedItem?.clientId)
   const selectedContactLabelMap = useMemo(
@@ -141,10 +137,16 @@ export function WorkItemsListWithDrawer({
     })
   }, [contactSearchText, externalContactOptions])
 
+  // Reset in-drawer contact filters when switching selected work item.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setContactSearchText("")
     setSelectedExternalContactId("")
   }, [selectedKey])
+
+  if (rows.length === 0) {
+    return <EmptyState title={emptyTitle} description={emptyDescription} />
+  }
 
   return (
     <>

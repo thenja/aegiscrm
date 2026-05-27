@@ -361,7 +361,7 @@ export default async function DashboardPage({
 
                 <div className="flex h-9 gap-2">
                   <Button type="submit" variant="secondary" className="h-9">Apply Filters</Button>
-                  <Button type="button" variant="ghost" asChild className="h-9"><a href="/">Reset</a></Button>
+                  <Button type="button" variant="ghost" asChild className="h-9"><Link href="/">Reset</Link></Button>
                 </div>
               </form>
             </FilterBar>

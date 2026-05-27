@@ -1,6 +1,6 @@
 "use client"
 
-import { type ReactNode, useEffect, useState } from "react"
+import { type ReactNode, useEffect } from "react"
 import { createPortal } from "react-dom"
 
 import { Button } from "@/components/ui/button"
@@ -19,13 +19,6 @@ export function SlideOver({
   onClose: () => void
   children: ReactNode
 }) {
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-    return () => setMounted(false)
-  }, [])
-
   useEffect(() => {
     if (!open) return
     const onKeyDown = (event: KeyboardEvent) => {
@@ -40,7 +33,7 @@ export function SlideOver({
     }
   }, [open, onClose])
 
-  if (!mounted) return null
+  if (typeof document === "undefined") return null
 
   return createPortal(
     <div

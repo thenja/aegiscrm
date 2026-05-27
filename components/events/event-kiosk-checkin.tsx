@@ -84,6 +84,8 @@ export function EventKioskCheckin() {
   useEffect(() => {
     const fromQuery = searchParams.get("event_code")
     if (fromQuery && fromQuery.trim().length > 0) {
+      // Sync URL-provided event code into kiosk session bootstrap state.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setEventCode(fromQuery.trim().toUpperCase())
     }
   }, [searchParams])
@@ -242,6 +244,8 @@ export function EventKioskCheckin() {
     const restoredEventCode = fromQuery || persistedEventCode
 
     if (restoredEventCode && persistedStaffNickname && persistedStaffNickname.length > 1) {
+      // Sync persisted kiosk session back into local state on mount.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setEventCode(restoredEventCode)
       setStaffNickname(persistedStaffNickname)
       void loadEvent({

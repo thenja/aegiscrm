@@ -52,12 +52,9 @@ export function GlobalSearch() {
   useEffect(() => {
     const q = query.trim()
     if (q.length < 2) {
-      setResults([])
-      setLoading(false)
       return
     }
 
-    setLoading(true)
     const timeout = window.setTimeout(async () => {
       try {
         const response = await fetch(`/api/search?q=${encodeURIComponent(q)}`, {
@@ -103,7 +100,15 @@ export function GlobalSearch() {
           value={query}
           onFocus={() => setOpen(true)}
           onChange={(event) => {
-            setQuery(event.target.value)
+            const next = event.target.value
+            if (next.trim().length >= 2) {
+              setLoading(true)
+            }
+            setQuery(next)
+            if (next.trim().length < 2) {
+              setResults([])
+              setLoading(false)
+            }
             setOpen(true)
           }}
         />

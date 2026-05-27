@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 
 import { updateExternalContactAction } from "@/app/actions/external-contacts"
 import { Button } from "@/components/ui/button"
@@ -33,9 +33,6 @@ export function ExternalContactsListWithDrawer({
   initialSelectedId?: string | null
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId ?? null)
-  useEffect(() => {
-    setSelectedId(initialSelectedId ?? null)
-  }, [initialSelectedId])
 
   const selectedContact = useMemo(
     () => contacts.find((contact) => contact.external_contact_id === selectedId) ?? null,

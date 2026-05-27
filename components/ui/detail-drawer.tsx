@@ -5,7 +5,7 @@ import type { ReactNode } from "react"
 import { SlideOver } from "@/components/ui/slide-over"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { useEffect, useState, type ReactElement } from "react"
+import { useState, type ReactElement } from "react"
 
 export function SlideOverPanel({
   open,
@@ -36,21 +36,14 @@ export function ModalForm({
   subtitle,
   children,
   triggerClassName,
-  autoCloseToken,
 }: {
   triggerLabel: string
   title: string
   subtitle?: string
   children: ReactNode
   triggerClassName?: string
-  autoCloseToken?: string
 }) {
   const [open, setOpen] = useState(false)
-  useEffect(() => {
-    if (autoCloseToken) {
-      setOpen(false)
-    }
-  }, [autoCloseToken])
 
   return (
     <>

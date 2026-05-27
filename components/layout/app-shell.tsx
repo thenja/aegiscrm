@@ -9,14 +9,11 @@ import type { UserProfile } from "@/types/roles"
 
 export function AppShell({ children, profile }: { children: ReactNode; profile: UserProfile }) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
-  const [desktopSidebarMode, setDesktopSidebarMode] = useState<"full" | "compact" | "hidden">("full")
-
-  useEffect(() => {
+  const [desktopSidebarMode, setDesktopSidebarMode] = useState<"full" | "compact" | "hidden">(() => {
+    if (typeof window === "undefined") return "full"
     const saved = window.localStorage.getItem("aegis-sidebar-mode")
-    if (saved === "full" || saved === "compact" || saved === "hidden") {
-      setDesktopSidebarMode(saved)
-    }
-  }, [])
+    return saved === "full" || saved === "compact" || saved === "hidden" ? saved : "full"
+  })
 
   useEffect(() => {
     const onResize = () => {

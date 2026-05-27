@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 
 import {
   checkInEventGuestInternalAction,
@@ -37,7 +37,6 @@ export function EventGuestsListWithDrawer({
   canUndoCheckIn,
   seatingMode,
   initialSelectedGuestId,
-  autoCloseToken,
 }: {
   guests: EventGuestDrawerRow[]
   returnTo: string
@@ -45,19 +44,12 @@ export function EventGuestsListWithDrawer({
   canUndoCheckIn: boolean
   seatingMode: AttendanceSeatingMode
   initialSelectedGuestId?: string | null
-  autoCloseToken?: string
 }) {
   const [selectedGuestId, setSelectedGuestId] = useState<string | null>(initialSelectedGuestId ?? null)
   const selectedGuest = useMemo(
     () => guests.find((guest) => guest.guest_id === selectedGuestId) ?? null,
     [guests, selectedGuestId]
   )
-
-  useEffect(() => {
-    if (autoCloseToken) {
-      setSelectedGuestId(null)
-    }
-  }, [autoCloseToken])
 
   if (guests.length === 0) {
     return <EmptyState title="No guests found" description="Import guests from Excel or add guests manually." />
