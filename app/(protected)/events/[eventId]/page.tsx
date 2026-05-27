@@ -50,22 +50,24 @@ type SearchParams = {
 type Params = {
   params: {
     eventId: string
-  }
-  searchParams?: SearchParams
+  } | Promise<{ eventId: string }>
+  searchParams?: SearchParams | Promise<SearchParams>
 }
 
 export default async function EventDetailsPage({ params, searchParams }: Params) {
   const auth = await requireAuth()
-  const eventId = params.eventId
+  const resolvedParams = await params
+  const resolvedSearchParams = searchParams ? await searchParams : undefined
+  const eventId = resolvedParams.eventId
   const canManage = hasRole(auth.profile.role, ["Director", "Team Lead", "Team Member"])
   const canUndoCheckIn = hasRole(auth.profile.role, ["Director", "Team Lead"])
 
   const [event, guests, summary, recentLogs] = await Promise.all([
     getEventById(eventId),
     listEventGuests(eventId, {
-      query: searchParams?.query,
-      category: searchParams?.category,
-      attendance_status: searchParams?.attendance_status,
+      query: resolvedSearchParams?.query,
+      category: resolvedSearchParams?.category,
+      attendance_status: resolvedSearchParams?.attendance_status,
     }),
     getEventAttendanceSummary(eventId),
     listRecentAttendanceLogs(eventId, 20),
@@ -79,7 +81,7 @@ export default async function EventDetailsPage({ params, searchParams }: Params)
 
   return (
     <div className="space-y-4">
-      <ActionFeedback feedback={searchParams?.feedback} message={searchParams?.message} />
+      <ActionFeedback feedback={resolvedSearchParams?.feedback} message={resolvedSearchParams?.message} />
 
       <PageHeader
         title={event.event_name}
@@ -214,7 +216,7 @@ export default async function EventDetailsPage({ params, searchParams }: Params)
             <ModalForm triggerLabel="+ Add Guest" title="Add Guest">
               <FormSection title="Guest Details">
                 <form
-                  key={searchParams?.reset_create_event_guest ?? "create-event-guest-form"}
+                  key={resolvedSearchParams?.reset_create_event_guest ?? "create-event-guest-form"}
                   action={createEventGuestAction}
                   className="grid grid-cols-1 gap-3 md:grid-cols-2"
                 >
@@ -266,8 +268,8 @@ export default async function EventDetailsPage({ params, searchParams }: Params)
         }
       >
         <form method="get" className="mb-3 grid grid-cols-1 gap-2 md:grid-cols-4">
-          <Input name="query" defaultValue={searchParams?.query ?? ""} placeholder="Search guest / company / phone / table / category" />
-          <select name="category" defaultValue={searchParams?.category ?? ""} className="h-10 rounded-md border border-border px-3 text-sm">
+          <Input name="query" defaultValue={resolvedSearchParams?.query ?? ""} placeholder="Search guest / company / phone / table / category" />
+          <select name="category" defaultValue={resolvedSearchParams?.category ?? ""} className="h-10 rounded-md border border-border px-3 text-sm">
             <option value="">All Categories</option>
             {EVENT_GUEST_CATEGORIES.map((value) => (
               <option key={value} value={value}>
@@ -275,7 +277,7 @@ export default async function EventDetailsPage({ params, searchParams }: Params)
               </option>
             ))}
           </select>
-          <select name="attendance_status" defaultValue={searchParams?.attendance_status ?? ""} className="h-10 rounded-md border border-border px-3 text-sm">
+          <select name="attendance_status" defaultValue={resolvedSearchParams?.attendance_status ?? ""} className="h-10 rounded-md border border-border px-3 text-sm">
             <option value="">All Attendance</option>
             <option value="Not Arrived">Not Arrived</option>
             <option value="Attended">Attended</option>
@@ -294,7 +296,7 @@ export default async function EventDetailsPage({ params, searchParams }: Params)
           canManage={canManage}
           canUndoCheckIn={canUndoCheckIn}
           seatingMode={event.seating_mode}
-          initialSelectedGuestId={searchParams?.guest_id ?? null}
+          initialSelectedGuestId={resolvedSearchParams?.guest_id ?? null}
         />
       </SectionCard>
 

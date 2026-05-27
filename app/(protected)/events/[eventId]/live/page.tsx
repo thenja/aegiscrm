@@ -11,12 +11,13 @@ import { formatDisplayDate } from "@/lib/date"
 type Params = {
   params: {
     eventId: string
-  }
+  } | Promise<{ eventId: string }>
 }
 
 export default async function EventLivePage({ params }: Params) {
   await requireAuth()
-  const payload = await getEventLiveData(params.eventId)
+  const resolvedParams = await params
+  const payload = await getEventLiveData(resolvedParams.eventId)
   if (!payload.event) {
     notFound()
   }
@@ -29,7 +30,7 @@ export default async function EventLivePage({ params }: Params) {
         action={
           <div className="flex gap-2">
             <Button size="sm" variant="ghost" asChild>
-              <Link href={`/events/${params.eventId}`}>Back to Event</Link>
+              <Link href={`/events/${resolvedParams.eventId}`}>Back to Event</Link>
             </Button>
             <Button size="sm" variant="secondary" asChild>
               <Link href={`/events/check-in?event_code=${encodeURIComponent(payload.event.event_code)}`}>Open Kiosk</Link>
@@ -38,7 +39,7 @@ export default async function EventLivePage({ params }: Params) {
         }
       />
 
-      <EventLiveDashboard eventId={params.eventId} initialData={payload} />
+      <EventLiveDashboard eventId={resolvedParams.eventId} initialData={payload} />
     </div>
   )
 }

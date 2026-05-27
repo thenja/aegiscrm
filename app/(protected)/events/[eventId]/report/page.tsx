@@ -10,16 +10,17 @@ import { formatDisplayDate } from "@/lib/date"
 type Params = {
   params: {
     eventId: string
-  }
+  } | Promise<{ eventId: string }>
 }
 
 export default async function EventReportPage({ params }: Params) {
   await requireAuth()
+  const resolvedParams = await params
 
   const [event, summary, guests] = await Promise.all([
-    getEventById(params.eventId),
-    getEventAttendanceSummary(params.eventId),
-    listEventGuests(params.eventId),
+    getEventById(resolvedParams.eventId),
+    getEventAttendanceSummary(resolvedParams.eventId),
+    listEventGuests(resolvedParams.eventId),
   ])
 
   if (!event) {
@@ -34,13 +35,13 @@ export default async function EventReportPage({ params }: Params) {
         action={
           <div className="flex gap-2">
             <Button size="sm" variant="ghost" asChild>
-              <Link href={`/events/${params.eventId}`}>Back to Event</Link>
+              <Link href={`/events/${resolvedParams.eventId}`}>Back to Event</Link>
             </Button>
             <Button size="sm" variant="secondary" asChild>
-              <a href={`/api/events/${params.eventId}/export?format=csv`}>Export CSV</a>
+              <a href={`/api/events/${resolvedParams.eventId}/export?format=csv`}>Export CSV</a>
             </Button>
             <Button size="sm" variant="secondary" asChild>
-              <a href={`/api/events/${params.eventId}/export?format=xlsx`}>Export Excel</a>
+              <a href={`/api/events/${resolvedParams.eventId}/export?format=xlsx`}>Export Excel</a>
             </Button>
           </div>
         }
