@@ -37,8 +37,13 @@ type KioskGuest = {
   checked_in_by_nickname: string | null
 }
 
+type KioskView = "search" | "list"
+type ListSort = "table" | "company" | "name"
+type ListStatus = "all" | "Not Arrived" | "Attended"
+
 const KIOSK_EVENT_CODE_KEY = "aegis-kiosk-event-code"
 const KIOSK_STAFF_NICKNAME_KEY = "aegis-kiosk-staff-nickname"
+const CATEGORY_OPTIONS = ["all", "VIP", "Media", "Analyst", "Management", "Guest", "Staff", "Other"] as const
 
 function sessionId() {
   if (typeof window === "undefined") return "kiosk-session"
@@ -63,13 +68,37 @@ export function EventKioskCheckin() {
   const [messageTone, setMessageTone] = useState<"success" | "error" | "info">("info")
   const [activeGuestId, setActiveGuestId] = useState<string | null>(null)
   const [hasSearched, setHasSearched] = useState(false)
+  const [activeView, setActiveView] = useState<KioskView>("search")
+  const [listSort, setListSort] = useState<ListSort>("name")
+  const [listStatus, setListStatus] = useState<ListStatus>("all")
+  const [listCategory, setListCategory] = useState<(typeof CATEGORY_OPTIONS)[number]>("all")
+  const [listGuests, setListGuests] = useState<KioskGuest[]>([])
+  const [loadingList, setLoadingList] = useState(false)
   const latestSearchRef = useRef("")
+  const latestViewRef = useRef<KioskView>("search")
+  const latestListOptionsRef = useRef<{ sort: ListSort; status: ListStatus; category: (typeof CATEGORY_OPTIONS)[number] }>({
+    sort: "name",
+    status: "all",
+    category: "all",
+  })
   const searchInputRef = useRef<HTMLInputElement | null>(null)
 
   const attendanceLabel = useMemo(() => {
     if (!eventInfo) return "-"
     return `${eventInfo.attended_guests} / ${eventInfo.total_guests}`
   }, [eventInfo])
+
+  useEffect(() => {
+    latestViewRef.current = activeView
+  }, [activeView])
+
+  useEffect(() => {
+    latestListOptionsRef.current = {
+      sort: listSort,
+      status: listStatus,
+      category: listCategory,
+    }
+  }, [listSort, listStatus, listCategory])
 
   const notArrivedCount = useMemo(() => {
     if (!eventInfo) return 0
@@ -151,6 +180,9 @@ export function EventKioskCheckin() {
         setSearchText("")
         setGuests([])
         setHasSearched(false)
+        setListStatus("all")
+        setListCategory("all")
+        setListSort(payload.event.seating_mode === "With Table" ? "table" : "name")
       }
       if (!options?.silent) {
         setMessage("Event loaded. Start searching guests to check in.")
@@ -261,13 +293,46 @@ export function EventKioskCheckin() {
   }, [loadEvent, searchParams])
 
   const eventIdForChannel = eventInfo?.event_id
+  const loadListGuests = useCallback(
+    async (options?: { sort?: ListSort; status?: ListStatus; category?: (typeof CATEGORY_OPTIONS)[number]; eventCodeOverride?: string }) => {
+      const resolvedEventCode = (options?.eventCodeOverride ?? eventCode).trim()
+      if (!resolvedEventCode) {
+        setListGuests([])
+        return
+      }
+      const sort = options?.sort ?? listSort
+      const status = options?.status ?? listStatus
+      const category = options?.category ?? listCategory
+      setLoadingList(true)
+      try {
+        const response = await fetch(
+          `/api/events/kiosk/guests?event_code=${encodeURIComponent(resolvedEventCode)}&sort=${encodeURIComponent(sort)}&status=${encodeURIComponent(status)}&category=${encodeURIComponent(category)}`
+        )
+        const payload = (await response.json()) as { guests?: KioskGuest[]; error?: string }
+        if (!response.ok) {
+          throw new Error(payload.error ?? "Failed to load attendance list.")
+        }
+        setListGuests(payload.guests ?? [])
+      } catch {
+        setListGuests([])
+      } finally {
+        setLoadingList(false)
+      }
+    },
+    [eventCode, listCategory, listSort, listStatus]
+  )
+
   const refreshActiveView = useCallback(() => {
     const currentQuery = latestSearchRef.current.trim()
-    if (currentQuery) {
+    if (latestViewRef.current === "search" && currentQuery) {
       void searchGuests(currentQuery, eventCode.trim())
     }
+    if (latestViewRef.current === "list") {
+      const options = latestListOptionsRef.current
+      void loadListGuests({ sort: options.sort, status: options.status, category: options.category, eventCodeOverride: eventCode.trim() })
+    }
     void loadEvent({ preserveView: true, silent: true })
-  }, [eventCode, loadEvent, searchGuests])
+  }, [eventCode, loadEvent, loadListGuests, searchGuests])
 
   useEffect(() => {
     if (!eventIdForChannel) return
@@ -318,6 +383,7 @@ export function EventKioskCheckin() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       if (!eventInfo) return
+      if (activeView !== "search") return
       const trimmed = searchText.trim()
       if (!trimmed) {
         setGuests([])
@@ -328,7 +394,7 @@ export function EventKioskCheckin() {
       void searchGuests(trimmed, eventCode.trim())
     }, 260)
     return () => window.clearTimeout(timer)
-  }, [eventCode, eventInfo, searchGuests, searchText])
+  }, [activeView, eventCode, eventInfo, searchGuests, searchText])
 
   const clearSession = useCallback(() => {
     if (typeof window !== "undefined") {
@@ -339,6 +405,7 @@ export function EventKioskCheckin() {
     setStaffNickname("")
     setEventInfo(null)
     setGuests([])
+    setListGuests([])
     setSearchText("")
     setHasSearched(false)
     setMessage(null)
@@ -421,10 +488,36 @@ export function EventKioskCheckin() {
         ) : (
           <>
             <section className="mt-5 rounded-xl border border-slate-200 bg-white p-4 md:p-5">
+              <div className="mb-4 inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1">
+                <button
+                  type="button"
+                  onClick={() => setActiveView("search")}
+                  className={`rounded-md px-3 py-1.5 text-sm font-medium ${activeView === "search" ? "bg-white text-navy shadow-sm" : "text-slate-600 hover:text-navy"}`}
+                >
+                  Search Guest
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveView("list")
+                    if (eventInfo) {
+                      void loadListGuests()
+                    }
+                  }}
+                  className={`rounded-md px-3 py-1.5 text-sm font-medium ${activeView === "list" ? "bg-white text-navy shadow-sm" : "text-slate-600 hover:text-navy"}`}
+                >
+                  Attendance List
+                </button>
+              </div>
+
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <div>
-                  <h2 className="text-2xl font-semibold text-navy md:text-3xl">Guest Check-in</h2>
-                  <p className="mt-1 text-sm text-slate-600">Search by guest name, company, phone, table number or category.</p>
+                  <h2 className="text-2xl font-semibold text-navy md:text-3xl">{activeView === "search" ? "Guest Check-in" : "Attendance List"}</h2>
+                  <p className="mt-1 text-sm text-slate-600">
+                    {activeView === "search"
+                      ? "Search by guest name, company, phone, table number or category."
+                      : "Browse and update attendance by sort and filters."}
+                  </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 text-sm text-slate-700">
                   <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 font-medium text-navy">{attendanceLabel} Checked In</span>
@@ -433,37 +526,139 @@ export function EventKioskCheckin() {
                 </div>
               </div>
 
-              <div className="mt-4 rounded-xl border border-slate-200 bg-white px-3 shadow-[inset_0_1px_2px_rgba(15,23,42,0.04)]">
-                <div className="flex items-center gap-2">
-                  <Search size={20} className="text-slate-500" />
-                  <input
-                    ref={searchInputRef}
-                    value={searchText}
-                    onChange={(event) => setSearchText(event.target.value)}
-                    placeholder="Search guest name, company, phone, table number or category"
-                    className="h-14 w-full bg-transparent text-base outline-none md:text-lg"
-                    disabled={!eventInfo}
-                  />
+              {activeView === "search" ? (
+                <div className="mt-4 rounded-xl border border-slate-200 bg-white px-3 shadow-[inset_0_1px_2px_rgba(15,23,42,0.04)]">
+                  <div className="flex items-center gap-2">
+                    <Search size={20} className="text-slate-500" />
+                    <input
+                      ref={searchInputRef}
+                      value={searchText}
+                      onChange={(event) => setSearchText(event.target.value)}
+                      placeholder="Search guest name, company, phone, table number or category"
+                      className="h-14 w-full bg-transparent text-base outline-none md:text-lg"
+                      disabled={!eventInfo}
+                    />
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-3">
+                  <select
+                    value={listSort}
+                    onChange={(event) => {
+                      const nextSort = event.target.value as ListSort
+                      setListSort(nextSort)
+                      void loadListGuests({ sort: nextSort })
+                    }}
+                    className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
+                  >
+                    {eventInfo?.seating_mode === "With Table" ? <option value="table">Sort: Table No</option> : null}
+                    <option value="company">Sort: Company</option>
+                    <option value="name">Sort: A-Z Name</option>
+                  </select>
+                  <select
+                    value={listStatus}
+                    onChange={(event) => {
+                      const nextStatus = event.target.value as ListStatus
+                      setListStatus(nextStatus)
+                      void loadListGuests({ status: nextStatus })
+                    }}
+                    className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
+                  >
+                    <option value="all">Status: All</option>
+                    <option value="Not Arrived">Status: Not Arrived</option>
+                    <option value="Attended">Status: Attended</option>
+                  </select>
+                  <select
+                    value={listCategory}
+                    onChange={(event) => {
+                      const nextCategory = event.target.value as (typeof CATEGORY_OPTIONS)[number]
+                      setListCategory(nextCategory)
+                      void loadListGuests({ category: nextCategory })
+                    }}
+                    className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
+                  >
+                    <option value="all">Category: All</option>
+                    {CATEGORY_OPTIONS.filter((category) => category !== "all").map((category) => (
+                      <option key={category} value={category}>
+                        Category: {category}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </section>
 
             <section className="mt-4 space-y-3">
-              {loadingSearch ? <p className="text-sm text-slate-600">Searching guests...</p> : null}
-              {!loadingSearch && !hasSearched ? (
+              {activeView === "search" && loadingSearch ? <p className="text-sm text-slate-600">Searching guests...</p> : null}
+              {activeView === "search" && !loadingSearch && !hasSearched ? (
                 <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-center">
                   <p className="text-sm font-medium text-navy">Search for a guest to begin check-in.</p>
                 </div>
               ) : null}
 
-              {!loadingSearch && hasSearched && guests.length === 0 ? (
+              {activeView === "search" && !loadingSearch && hasSearched && guests.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-center">
                   <p className="text-sm font-medium text-navy">No matching guest found.</p>
                   <p className="mt-1 text-xs text-slate-500">Try searching by guest name, company, phone, table number, or category.</p>
                 </div>
               ) : null}
 
-              {guests.map((guest) => (
+              {activeView === "search"
+                ? guests.map((guest) => (
+                    <article key={guest.guest_id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-[0_6px_18px_rgba(15,23,42,0.05)]">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-lg font-semibold text-navy">{guest.guest_name}</p>
+                          <p className="mt-1 text-sm text-slate-600">{guest.company ?? "-"}</p>
+                          {guest.designation ? <p className="text-sm text-slate-600">{guest.designation}</p> : null}
+                          <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                            <span className="rounded-full bg-slate-100 px-2.5 py-1 font-medium text-slate-700">{guest.category}</span>
+                            {eventInfo?.seating_mode === "With Table" ? (
+                              <span className="rounded-full bg-slate-100 px-2.5 py-1 font-medium text-slate-700">Table {guest.table_no ?? "-"}</span>
+                            ) : null}
+                          </div>
+                        </div>
+                        <StatusBadge status={guest.attendance_status} compact />
+                      </div>
+
+                      {guest.attendance_status === "Attended" && guest.checked_in_at ? (
+                        <p className="mt-3 text-sm text-slate-600">
+                          Already checked in by{" "}
+                          <span className="font-medium text-navy">{guest.checked_in_by_nickname ?? "-"}</span> at{" "}
+                          <span className="font-medium text-navy">{new Date(guest.checked_in_at).toLocaleString("en-MY")}</span>.
+                        </p>
+                      ) : null}
+
+                      <div className="mt-4">
+                        {guest.attendance_status === "Attended" ? (
+                          <div className="inline-flex items-center gap-1.5 rounded-md border border-status-green/40 bg-status-green-bg px-3 py-2 text-sm font-medium text-status-green">
+                            <CheckCircle2 size={15} />
+                            Attended
+                          </div>
+                        ) : (
+                          <Button
+                            type="button"
+                            onClick={() => void markAttended(guest.guest_id)}
+                            disabled={activeGuestId === guest.guest_id || !eventInfo}
+                            className="h-10 bg-navy px-4 text-sm hover:bg-navy/90"
+                          >
+                            {activeGuestId === guest.guest_id ? "Marking..." : "Mark Attended"}
+                          </Button>
+                        )}
+                      </div>
+                    </article>
+                  ))
+                : null}
+
+              {activeView === "list" && loadingList ? <p className="text-sm text-slate-600">Loading attendance list...</p> : null}
+              {activeView === "list" && !loadingList && listGuests.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-center">
+                  <p className="text-sm font-medium text-navy">No guests found for current filters.</p>
+                </div>
+              ) : null}
+
+              {activeView === "list"
+                ? listGuests.map((guest) => (
                 <article key={guest.guest_id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-[0_6px_18px_rgba(15,23,42,0.05)]">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -506,7 +701,8 @@ export function EventKioskCheckin() {
                     )}
                   </div>
                 </article>
-              ))}
+                  ))
+                : null}
             </section>
           </>
         )}
